@@ -1,0 +1,9 @@
+node_modules/
+data/data.json
+data/.secret
+data/favicons/
+*.log
+.DS_Store
+
+# 本地环境变量（含会话密钥，务必不要提交）
+.env

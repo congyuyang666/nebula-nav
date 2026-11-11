@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>后台管理 · Aurora Nav</title>
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090d16'/%3E%3Cpath d='M7 22c3.6-6.4 7-10 12-12.6' stroke='%234be1c0' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M7 26c4.2-6 8.4-9.6 15-13' stroke='%238b7bff' stroke-width='2.4' fill='none' stroke-linecap='round' opacity='.85'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="admin-body">
+<div class="aurora" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- ===================== 视图：后台登录 ===================== -->
+<div class="admin-login" id="adminLogin" hidden>
+  <div class="gate-panel">
+    <div class="gate-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <defs>
+          <linearGradient id="loginGrad" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#4be1c0"></stop>
+            <stop offset="1" stop-color="#8b7bff"></stop>
+          </linearGradient>
+        </defs>
+        <path d="M4 17c3-6 6.4-9.4 10.6-11.4M4.6 20.4c3.6-5.6 7.6-8.8 13.2-11.6M8.8 21.6c3-3.6 6-5.8 10-7.8"
+              fill="none" stroke="url(#loginGrad)" stroke-width="1.9" stroke-linecap="round"></path>
+      </svg>
+    </div>
+    <h1>后台管理</h1>
+    <p class="lead">登录后可以维护分类、网址、密码保险箱和访问密码。</p>
+    <form id="adminLoginForm" autocomplete="off">
+      <label class="field-label" for="adminUser">管理员账号</label>
+      <input class="input" id="adminUser" type="text" name="username" placeholder="admin" autocomplete="username">
+      <label class="field-label" for="adminPass" style="margin-top:14px">管理员密码</label>
+      <input class="input" id="adminPass" type="password" name="password" placeholder="请输入后台密码" autocomplete="current-password">
+      <p class="gate-error" id="adminLoginError" role="alert"></p>
+      <button class="btn btn-primary btn-block" id="adminLoginBtn" type="submit">登录后台</button>
+    </form>
+    <p class="gate-foot"><a href="/" style="color:#8ea0b8">返回前台导航</a></p>
+  </div>
+</div>
+
+<!-- ===================== 视图：管理台 ===================== -->
+<div class="admin-shell" id="adminShell" hidden>
+  <aside class="admin-side">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20">
+          <defs>
+            <linearGradient id="sideGrad" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stop-color="#4be1c0"></stop>
+              <stop offset="1" stop-color="#8b7bff"></stop>
+            </linearGradient>
+          </defs>
+          <path d="M4 17c3-6 6.4-9.4 10.6-11.4M4.6 20.4c3.6-5.6 7.6-8.8 13.2-11.6M8.8 21.6c3-3.6 6-5.8 10-7.8"
+                fill="none" stroke="url(#sideGrad)" stroke-width="1.9" stroke-linecap="round"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">Aurora Nav</span>
+        <span class="brand-sub">后台管理</span>
+      </div>
+    </div>
+
+    <nav class="admin-nav" id="adminNav">
+      <button type="button" data-panel="settings" aria-current="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h6M14 17h6" stroke-linecap="round"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="12" r="2"></circle><circle cx="12" cy="17" r="2"></circle></svg>
+        站点设置
+      </button>
+      <button type="button" data-panel="categories">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 4 8 4.5-8 4.5-8-4.5L12 4Z" stroke-linejoin="round"></path><path d="m4 13 8 4.5 8-4.5M4 17.5 12 22l8-4.5" stroke-linejoin="round"></path></svg>
+        分类管理
+      </button>
+      <button type="button" data-panel="sites">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"></circle><path d="M4.5 9.5h15M4.5 14.5h15M12 4c2.2 2.4 3.3 5.2 3.3 8S14.2 17.6 12 20c-2.2-2.4-3.3-5.2-3.3-8S9.8 6.4 12 4Z"></path></svg>
+        网址管理
+      </button>
+      <button type="button" data-panel="vault">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4.5" y="10" width="15" height="10.5" rx="2.4"></rect><path d="M8 10V7.4a4 4 0 0 1 8 0V10M12 14v3" stroke-linecap="round"></path></svg>
+        密码保险箱
+      </button>
+      <button type="button" data-panel="io">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4v10m0 0 3.5-3.5M12 14l-3.5-3.5M4 16v2.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        导入导出
+      </button>
+      <button type="button" data-panel="security">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3.5 5 6.2v5.1c0 4.2 2.9 7.4 7 9.2 4.1-1.8 7-5 7-9.2V6.2L12 3.5Z" stroke-linejoin="round"></path><path d="m9 11.8 2.1 2.1 4-4.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        安全与账号
+      </button>
+    </nav>
+
+    <div class="admin-side-foot">
+      <span class="save-state" id="saveState">没有未保存的修改</span>
+      <button class="btn btn-primary btn-sm" id="saveBtn" type="button">保存修改</button>
+      <a class="btn btn-ghost btn-sm" href="/" style="text-decoration:none">返回前台</a>
+    </div>
+  </aside>
+
+  <main class="admin-main">
+    <!-- ---------- 站点设置 ---------- -->
+    <section class="panel active" data-panel-body="settings">
+      <div class="panel-head">
+        <h1>站点设置</h1>
+        <p>前台标题、副标题与网络模式的默认行为。保存后前台立即生效。</p>
+      </div>
+      <div class="card-block">
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="setTitle">站点名称</label>
+            <input class="input-sm" id="setTitle" maxlength="24" placeholder="Aurora Nav">
+          </div>
+          <div class="form-row">
+            <label for="setSubtitle">副标题</label>
+            <input class="input-sm" id="setSubtitle" maxlength="60" placeholder="极光导航 · 自托管的起始页">
+          </div>
+          <div class="form-row full">
+            <label for="setFooter">页脚文字</label>
+            <input class="input-sm" id="setFooter" maxlength="120" placeholder="数据存在自己的机器上。">
+          </div>
+          <div class="form-row">
+            <label for="setMode">默认网络模式</label>
+            <select class="input-sm" id="setMode">
+              <option value="auto">自动识别</option>
+              <option value="lan">内网</option>
+              <option value="wan">公网</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>前台显示</label>
+            <label class="check-row">
+              <input type="checkbox" id="setShowMode">
+              显示内网 / 公网切换按钮
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-cols">
+        <div class="card-block">
+          <h2>数据概览</h2>
+          <div class="stat-grid">
+            <div class="stat">
+              <span class="stat-num" id="statSites">0</span>
+              <span class="stat-label">站点</span>
+            </div>
+            <div class="stat">
+              <span class="stat-num" id="statCats">0</span>
+              <span class="stat-label">分类</span>
+            </div>
+            <div class="stat">
+              <span class="stat-num" id="statPinned">0</span>
+              <span class="stat-label">常用</span>
+            </div>
+            <div class="stat">
+              <span class="stat-num" id="statVault">0</span>
+              <span class="stat-label">保险箱</span>
+            </div>
+          </div>
+          <p class="form-hint" id="statUpdated" style="margin:16px 2px 0"></p>
+        </div>
+
+        <div class="card-block">
+          <h2>使用提示</h2>
+          <ul class="tip-list">
+            <li>前台地址就是本服务的根路径，把它加到浏览器书签或手机桌面。</li>
+            <li>改完分类或网址，记得点左下角「保存修改」才会写回服务器。</li>
+            <li>数据在 <code>data/data.json</code>，备份直接复制这个文件即可。</li>
+            <li>放在反向代理后建议启用 HTTPS，再设置 <code>COOKIE_SECURE=1</code>。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 分类管理 ---------- -->
+    <section class="panel" data-panel-body="categories">
+      <div class="panel-head">
+        <h1>分类管理</h1>
+        <p>分类决定前台的分组与标签颜色。删除分类前先把里面的站点改到别的分类，否则会自动落到第一个分类。</p>
+      </div>
+      <div class="card-block">
+        <div class="toolbar">
+          <strong style="font-size:13px;color:#e7eef8">共 <span id="catCount">0</span> 个分类</strong>
+          <span class="grow"></span>
+          <button class="btn btn-ghost btn-sm" id="addCategory" type="button">添加分类</button>
+        </div>
+        <div id="categoryList"></div>
+      </div>
+    </section>
+
+    <!-- ---------- 网址管理 ---------- -->
+    <section class="panel" data-panel-body="sites">
+      <div class="panel-head">
+        <h1>网址管理</h1>
+        <p>同一站点可分别配置内网与公网地址，前台按当前模式自动选用；只填一个也能正常打开。</p>
+      </div>
+      <div class="card-block" style="padding-bottom:14px">
+        <div class="toolbar">
+          <input class="input-sm" id="siteSearch" type="search" placeholder="搜索名称或地址" aria-label="搜索站点">
+          <span class="grow"></span>
+          <button class="btn btn-ghost btn-sm" id="autoCategorize" type="button">未分类项自动归类</button>
+          <button class="btn btn-ghost btn-sm" id="addSite" type="button">添加网址</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <colgroup>
+              <col style="width:24%">
+              <col style="width:12%">
+              <col style="width:25%">
+              <col style="width:25%">
+              <col style="width:14%">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>站点</th>
+                <th>分类</th>
+                <th>内网地址</th>
+                <th>公网地址</th>
+                <th style="text-align:right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="siteTableBody"></tbody>
+          </table>
+        </div>
+        <p class="form-hint" id="siteSummary" style="margin:10px 2px 0"></p>
+      </div>
+    </section>
+
+    <!-- ---------- 密码保险箱 ---------- -->
+    <section class="panel" data-panel-body="vault">
+      <div class="panel-head">
+        <h1>密码保险箱</h1>
+        <p>条目存放在服务器的 data.json 里，进入本页需要用前台访问密码二次解锁。它不是加密密码管理器，别把最关键的主密码放进来。</p>
+      </div>
+      <div class="card-block">
+        <div class="vault-lock" id="vaultLock">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4.5" y="10" width="15" height="10.5" rx="2.4"></rect><path d="M8 10V7.4a4 4 0 0 1 8 0V10" stroke-linecap="round"></path><circle cx="12" cy="15" r="1.6"></circle></svg>
+          <div>
+            <div style="color:#e7eef8;font-size:14px;margin-bottom:4px">保险箱已锁定</div>
+            <p>输入前台访问密码解锁，会话 30 分钟后自动失效。</p>
+          </div>
+          <form class="vault-unlock-form" id="vaultForm" autocomplete="off">
+            <input class="input-sm" id="vaultPassword" type="password" placeholder="访问密码" aria-label="访问密码">
+            <button class="btn btn-primary btn-sm" type="submit">解锁</button>
+          </form>
+          <p class="form-hint" id="vaultError"></p>
+        </div>
+
+        <div id="vaultOpen" hidden>
+          <div class="toolbar">
+            <strong style="font-size:13px;color:#e7eef8">共 <span id="vaultCount">0</span> 条</strong>
+            <span class="grow"></span>
+            <button class="btn btn-ghost btn-sm" id="vaultRelock" type="button">重新上锁</button>
+            <button class="btn btn-ghost btn-sm" id="addVaultEntry" type="button">添加条目</button>
+          </div>
+          <div id="vaultList"></div>
+          <div class="toolbar" style="margin-top:16px;margin-bottom:0">
+            <span class="save-state">改动只保存在本页草稿，点左侧「保存修改」写回服务器。</span>
+            <span class="grow"></span>
+            <button class="btn btn-primary btn-sm" id="vaultSave" type="button">保存保险箱</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 导入导出 ---------- -->
+    <section class="panel" data-panel-body="io">
+      <div class="panel-head">
+        <h1>导入导出</h1>
+        <p>导出的 JSON 包含分类、网址与站点设置，可用于备份或迁移；浏览器书签 HTML 会被拆成站点，并按文件夹名与网址自动归类。</p>
+      </div>
+      <div class="card-block">
+        <h2>备份与迁移</h2>
+        <div class="toolbar" style="margin-bottom:0">
+          <button class="btn btn-ghost btn-sm" id="exportJson" type="button">导出 JSON</button>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+            导入 JSON
+            <input id="importJson" type="file" accept="application/json,.json" hidden>
+          </label>
+          <span class="form-hint">导入会覆盖当前分类与网址，密码与保险箱不受影响。</span>
+        </div>
+      </div>
+      <div class="card-block">
+        <h2>浏览器书签</h2>
+        <div class="toolbar" style="margin-bottom:0">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+            选择书签 HTML
+            <input id="importBookmarks" type="file" accept=".html,.htm,text/html" hidden>
+          </label>
+          <span class="form-hint">Chrome / Edge / 浏览器导出书签得到的 .html 文件；会跳过重复地址。</span>
+        </div>
+        <p class="form-hint" id="ioState" style="margin:12px 2px 0"></p>
+      </div>
+    </section>
+
+    <!-- ---------- 安全与账号 ---------- -->
+    <section class="panel" data-panel-body="security">
+      <div class="panel-head">
+        <h1>安全与账号</h1>
+        <p>首次部署后建议立刻改掉默认的前台密码（123456）与后台账号（admin / admin123）。改密码会立即生效。</p>
+      </div>
+      <div class="card-block">
+        <h2>前台访问密码</h2>
+        <form id="frontPwForm" class="form-grid" autocomplete="off">
+          <div class="form-row">
+            <label for="frontCurrent">当前访问密码</label>
+            <input class="input-sm" id="frontCurrent" type="password" autocomplete="current-password">
+          </div>
+          <div class="form-row">
+            <label for="frontNew">新密码（6–64 位）</label>
+            <input class="input-sm" id="frontNew" type="password" autocomplete="new-password">
+          </div>
+          <div class="form-row full">
+            <button class="btn btn-primary btn-sm" type="submit" style="justify-self:start">更新前台密码</button>
+          </div>
+        </form>
+      </div>
+      <div class="card-block">
+        <h2>后台账号</h2>
+        <form id="adminPwForm" class="form-grid" autocomplete="off">
+          <div class="form-row">
+            <label for="adminUsername">管理员账号</label>
+            <input class="input-sm" id="adminUsername" type="text" maxlength="32" autocomplete="username">
+          </div>
+          <div class="form-row">
+            <label for="adminCurrent">当前后台密码</label>
+            <input class="input-sm" id="adminCurrent" type="password" autocomplete="current-password">
+          </div>
+          <div class="form-row full">
+            <label for="adminNew">新后台密码（6–64 位）</label>
+            <input class="input-sm" id="adminNew" type="password" autocomplete="new-password">
+          </div>
+          <div class="form-row full">
+            <button class="btn btn-primary btn-sm" type="submit" style="justify-self:start">更新后台账号</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ===================== 弹窗：站点 ===================== -->
+<div class="modal-mask" id="itemModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="itemModalTitle">
+    <div class="modal-head">
+      <h3 id="itemModalTitle">编辑站点</h3>
+      <button class="modal-close" type="button" data-close="itemModal" aria-label="关闭">×</button>
+    </div>
+    <form class="modal-form" id="itemForm" autocomplete="off">
+      <div class="form-row">
+        <label for="itemTitle">名称</label>
+        <input class="input-sm" id="itemTitle" maxlength="40" required>
+      </div>
+      <div class="form-row">
+        <label for="itemDesc">描述</label>
+        <input class="input-sm" id="itemDesc" maxlength="80" placeholder="一句话说明这个站点是做什么的">
+      </div>
+      <div class="form-row">
+        <label for="itemCategory">分类</label>
+        <select class="input-sm" id="itemCategory"></select>
+      </div>
+      <div class="form-row">
+        <label for="itemUrlLan">内网地址</label>
+        <input class="input-sm" id="itemUrlLan" placeholder="http://192.168.1.10:5000">
+      </div>
+      <div class="form-row">
+        <label for="itemUrlWan">公网地址</label>
+        <input class="input-sm" id="itemUrlWan" placeholder="https://nas.example.com">
+      </div>
+      <div class="form-row">
+        <label for="itemIcon">图标地址（可选）</label>
+        <input class="input-sm" id="itemIcon" placeholder="留空自动抓取站点图标">
+      </div>
+      <div class="form-row">
+        <label for="itemTags">标签（逗号分隔）</label>
+        <input class="input-sm" id="itemTags" placeholder="nas, docker">
+      </div>
+      <label class="check-row">
+        <input type="checkbox" id="itemPinned">
+        放到前台「常用」区
+      </label>
+      <p class="form-hint" id="itemFormError" style="color:#ff7a6b"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" type="button" data-close="itemModal">取消</button>
+        <button class="btn btn-primary btn-sm" type="submit">保存站点</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== 弹窗：保险箱条目 ===================== -->
+<div class="modal-mask" id="vaultModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="vaultModalTitle">
+    <div class="modal-head">
+      <h3 id="vaultModalTitle">新增条目</h3>
+      <button class="modal-close" type="button" data-close="vaultModal" aria-label="关闭">×</button>
+    </div>
+    <form class="modal-form" id="vaultEntryForm" autocomplete="off">
+      <div class="form-row">
+        <label for="vaultTitle">名称</label>
+        <input class="input-sm" id="vaultTitle" maxlength="40" required>
+      </div>
+      <div class="form-row">
+        <label for="vaultUser">账号</label>
+        <input class="input-sm" id="vaultUser" maxlength="80" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label for="vaultPass">密码</label>
+        <input class="input-sm" id="vaultPass" maxlength="200" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label for="vaultUrl">地址</label>
+        <input class="input-sm" id="vaultUrl" placeholder="http://192.168.1.10:5000">
+      </div>
+      <div class="form-row">
+        <label for="vaultNote">备注</label>
+        <input class="input-sm" id="vaultNote" maxlength="200">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" type="button" data-close="vaultModal">取消</button>
+        <button class="btn btn-primary btn-sm" type="submit">保存条目</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<p class="toast" id="toast" role="status" aria-live="polite"></p>
+
+<script src="assets/taxonomy.js" defer></script>
+<script src="assets/admin.js" defer></script>
+</body>
+</html>
