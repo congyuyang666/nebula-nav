@@ -22,7 +22,7 @@
 ### Docker Compose（推荐）
 
 ```bash
-git clone <你的仓库地址> aurora-nav
+git clone https://github.com/congyuyang666/aurora-nav-web.git aurora-nav
 cd aurora-nav
 cp .env.example .env          # 可选：先填好初始密码与会话密钥
 docker compose up -d
