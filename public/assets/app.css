@@ -418,6 +418,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
   object-fit: contain;
 }
 .card-icon img.on-dark { filter: invert(1) hue-rotate(180deg) brightness(1.15); }
+/* 自定义图标：去掉描边，让图片正好铺满整个图标框，按 cover 裁切 */
+.card-icon.is-custom { border-width: 0; background: #0b1220; }
+/* 自定义图标：铺满整个图标框，按 cover 裁切，四角随框圆角 */
+.card-icon img.cover,
+.card-icon.is-custom img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
 .card-icon.is-letter { background: color-mix(in srgb, var(--c, var(--aurora)) 12%, #101827); }
 
 .card-body { min-width: 0; flex: 1; }

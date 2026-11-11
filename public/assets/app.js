@@ -178,8 +178,10 @@
 
     // 自定义图标优先；否则交给服务器的图标代理去抓站点 favicon，失败时退回首字母
     const iconUrl = item.icon || (host ? `/api/favicon?host=${encodeURIComponent(host)}` : '');
+    const isCustom = Boolean(item.icon);
     if (iconUrl) {
       tile.classList.remove('is-letter');
+      if (isCustom) tile.classList.add('is-custom');
       const img = el('img');
       img.src = iconUrl;
       img.alt = '';
@@ -190,6 +192,7 @@
       });
       // 深色底上，纯黑单色的 favicon 会看不见：采样判断亮度后反相
       img.addEventListener('load', () => {
+        if (isCustom) return;
         try {
           const canvas = document.createElement('canvas');
           canvas.width = 16;
