@@ -509,7 +509,9 @@ async function serveIcon(req, res, pathname) {
   res.writeHead(200, {
     'Content-Type': MIME[ext] || 'application/octet-stream',
     'Cache-Control': 'public, max-age=604800',
-    'X-Content-Type-Options': 'nosniff'
+    'X-Content-Type-Options': 'nosniff',
+    // 上传的 SVG 里可能带脚本，直接打开时禁掉一切执行能力
+    'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox"
   });
   fs.createReadStream(file).pipe(res);
 }
