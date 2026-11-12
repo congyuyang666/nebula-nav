@@ -23,8 +23,11 @@
 镜像由 GitHub Actions 自动构建，推送到 `ghcr.io/congyuyang666/nebula-nav`。仓库是私有的，所以首次拉取要先登录一次（只需一次）：
 
 ```bash
+# token 用 GitHub 的 classic PAT，勾选 read:packages 权限即可
 echo "<你的 GitHub Token>" | docker login ghcr.io -u congyuyang666 --password-stdin
 ```
+
+镜像标签：`:latest`（跟随 main）、`:v1.0.2` 这类版本标签、`:sha-xxxxxxx`（某次提交）。长期使用建议钉版本标签，升级时改 tag 再 `docker compose pull`。
 
 新建一个目录，把仓库里的 `docker-compose.yml` 放进去，然后：
 
