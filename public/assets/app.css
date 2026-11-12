@@ -192,6 +192,9 @@ html[data-theme="dawn"] .aurora::after,
 html[data-theme="paper"] .aurora::after { opacity: 0.18; }
 html[data-theme="dawn"] .mode-switch button[aria-pressed="true"],
 html[data-theme="paper"] .mode-switch button[aria-pressed="true"] { color: var(--text); }
+/* 上传的图标常带白底：浅色主题下用 multiply 让白底融入卡片 */
+html[data-theme="dawn"] .card-icon.is-custom img,
+html[data-theme="paper"] .card-icon.is-custom img { mix-blend-mode: multiply; }
 
 * { box-sizing: border-box; }
 
@@ -614,7 +617,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .card-icon img.on-dark { filter: invert(1) hue-rotate(180deg) brightness(1.15); }
 /* 自定义图标：去掉描边，让图片正好铺满整个图标框，按 cover 裁切 */
-.card-icon.is-custom { border-width: 0; background: var(--bg-deep); }
+.card-icon.is-custom { border-width: 0; background: transparent; }
 /* 自定义图标：铺满整个图标框，按 cover 裁切，四角随框圆角 */
 .card-icon img.cover,
 .card-icon.is-custom img {
