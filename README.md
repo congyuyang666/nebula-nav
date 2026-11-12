@@ -92,6 +92,7 @@ nebula-nav/
 ├── data/                    # 运行时生成，不要提交到仓库
 │   ├── data.json            # 分类 / 站点 / 设置 / 保险箱
 │   ├── favicons/            # 抓取到的站点图标缓存
+│   ├── icons/               # 后台上传的自定义图标
 │   └── .secret              # 自动生成的会话密钥
 ├── Dockerfile
 ├── docker-compose.yml        # 用现成镜像（默认）
@@ -125,6 +126,8 @@ nebula-nav/
 ### 图标
 
 卡片图标默认走服务器代理：`/api/favicon?host=xxx`，抓 `https://host/favicon.ico`，成功后在 `data/favicons/` 缓存 7 天。内网设备会改走 `http://`。
+
+也可以在后台「图标」那一行直接点「上传图片」，支持 PNG / JPG / SVG / WEBP / ICO、单张 ≤ 512KB，上传后自动写入该站点的图标地址，会按 1:1 铺满图标框。
 
 抓不到就退回首字母色块；纯黑单色的图标（比如 GitHub）会自动反相，避免在深色卡片上看不见。也可以给单个站点填「图标地址」覆盖。
 

@@ -369,8 +369,14 @@
         <input class="input-sm" id="itemUrlWan" placeholder="https://nas.example.com">
       </div>
       <div class="form-row">
-        <label for="itemIcon">图标地址（可选）</label>
-        <input class="input-sm" id="itemIcon" placeholder="留空自动抓取，填了会铺满图标框（建议 1:1 方图）">
+        <label for="itemIcon">图标（可选）</label>
+        <div class="icon-field">
+          <span class="icon-preview" id="itemIconPreview" aria-hidden="true"></span>
+          <input class="input-sm" id="itemIcon" placeholder="留空自动抓取；也可填图片地址">
+          <button class="btn btn-ghost btn-sm" type="button" id="itemIconPick">上传图片</button>
+          <input type="file" id="itemIconFile" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,image/x-icon" hidden>
+        </div>
+        <p class="field-hint" id="itemIconHint">PNG / JPG / SVG / WEBP / ICO，≤ 512 KB，建议 1:1 方图，会铺满图标框。</p>
       </div>
       <div class="form-row">
         <label for="itemTags">标签（逗号分隔）</label>

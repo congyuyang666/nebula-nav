@@ -20,6 +20,7 @@ const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : pat
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const SEED_FILE = path.join(ROOT, 'seed.json');
 const FAVICON_DIR = path.join(DATA_DIR, 'favicons');
+const ICON_DIR = path.join(DATA_DIR, 'icons');
 const SECRET_FILE = path.join(DATA_DIR, '.secret');
 
 const PORT = Number(process.env.PORT || 8080);
@@ -88,6 +89,14 @@ function safeUrl(value) {
   if (!v) return '';
   if (/^https?:\/\/[^\s]+$/i.test(v)) return v.slice(0, 300);
   return '';
+}
+
+/* 自定义图标：允许 http(s) 地址，也允许本站上传后的 /icons/xxx 路径 */
+function safeIcon(value) {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  if (/^\/icons\/[a-f0-9]{16}\.(png|jpg|gif|webp|ico|svg)$/i.test(v)) return v;
+  return safeUrl(v);
 }
 
 function hashPassword(password) {
@@ -216,6 +225,7 @@ function defaultData() {
 function loadDb() {
   ensureDir(DATA_DIR);
   ensureDir(FAVICON_DIR);
+  ensureDir(ICON_DIR);
   if (fs.existsSync(DATA_FILE)) {
     db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     db.settings = db.settings || {};
@@ -277,10 +287,24 @@ function normalizeItems(list, categories) {
       urlWan: safeUrl(item && item.urlWan),
       category: catIds.has(item && item.category) ? item.category : (categories[0] ? categories[0].id : 'misc'),
       tags: (Array.isArray(item && item.tags) ? item.tags : []).slice(0, 6).map((t) => clip(t, 16)).filter(Boolean),
-      icon: safeUrl(item && item.icon),
+      icon: safeIcon(item && item.icon),
       pinned: Boolean(item && item.pinned)
     };
   });
+}
+
+/* 按文件头判断真实图片类型，防止把任意文件当图标存下来 */
+function detectImageExt(buf) {
+  if (buf.length > 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return 'png';
+  if (buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'jpg';
+  if (buf.length > 6 && buf.slice(0, 4).toString('ascii') === 'GIF8') return 'gif';
+  if (buf.length > 12 && buf.slice(0, 4).toString('ascii') === 'RIFF' && buf.slice(8, 12).toString('ascii') === 'WEBP') return 'webp';
+  if (buf.length > 6 && buf[0] === 0 && buf[1] === 0 && buf[2] === 1 && buf[3] === 0) return 'ico';
+  if (buf.length > 8) {
+    const head = buf.slice(0, 64).toString('utf8').trim().toLowerCase();
+    if (head.startsWith('<svg') || (head.startsWith('<?xml') && head.includes('<svg'))) return 'svg';
+  }
+  return '';
 }
 
 function normalizeVault(list) {
@@ -461,6 +485,35 @@ async function handleFavicon(req, res, url) {
 
 /* --------------------------------------------------------------- 静态文件 */
 
+const ICON_NAME_RE = /^[a-f0-9]{16}\.(png|jpg|gif|webp|ico|svg)$/;
+
+async function serveIcon(req, res, pathname) {
+  const name = pathname.slice('/icons/'.length);
+  if (!ICON_NAME_RE.test(name)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    return res.end('404 Not Found');
+  }
+  const file = path.join(ICON_DIR, name);
+  let stat;
+  try {
+    stat = await fsp.stat(file);
+  } catch {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    return res.end('404 Not Found');
+  }
+  if (!stat.isFile()) {
+    res.writeHead(404);
+    return res.end('404 Not Found');
+  }
+  const ext = path.extname(file).toLowerCase();
+  res.writeHead(200, {
+    'Content-Type': MIME[ext] || 'application/octet-stream',
+    'Cache-Control': 'public, max-age=604800',
+    'X-Content-Type-Options': 'nosniff'
+  });
+  fs.createReadStream(file).pipe(res);
+}
+
 async function serveStatic(req, res, pathname) {
   const rel = pathname === '/' ? '/index.html' : pathname;
   const file = path.resolve(PUBLIC_DIR, `.${rel}`);
@@ -591,6 +644,29 @@ async function handle(req, res) {
     return sendJson(res, 200, { ok: true, role: 'admin' });
   }
 
+  if (pathname === '/api/admin/icon' && method === 'POST') {
+    const session = requireRole(req, res, ['admin']);
+    if (!session) return;
+    const body = await readJson(req, 1200 * 1024);
+    const dataUrl = String(body.data || '');
+    const m = /^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml|x-icon|vnd\.microsoft\.icon);base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+    if (!m) return sendJson(res, 400, { error: '只支持 png / jpg / gif / webp / svg / ico 图片' });
+    let buffer;
+    try {
+      buffer = Buffer.from(m[2], 'base64');
+    } catch {
+      return sendJson(res, 400, { error: '图片数据无法解析' });
+    }
+    if (!buffer.length || buffer.length > 512 * 1024) {
+      return sendJson(res, 400, { error: '图片需小于 512 KB' });
+    }
+    const ext = detectImageExt(buffer);
+    if (!ext) return sendJson(res, 400, { error: '文件内容不是有效的图片' });
+    const name = `${crypto.createHash('sha256').update(buffer).digest('hex').slice(0, 16)}.${ext}`;
+    await fsp.writeFile(path.join(ICON_DIR, name), buffer, { mode: 0o600 });
+    return sendJson(res, 200, { ok: true, url: `/icons/${name}` });
+  }
+
   if (pathname === '/api/admin/data' && method === 'GET') {
     const session = requireRole(req, res, ['admin']);
     if (!session) return;
@@ -660,6 +736,10 @@ async function handle(req, res) {
 
   if (pathname.startsWith('/api/')) {
     return sendJson(res, 404, { error: 'not found' });
+  }
+
+  if ((method === 'GET' || method === 'HEAD') && pathname.startsWith('/icons/')) {
+    return serveIcon(req, res, pathname);
   }
 
   if (method === 'GET' || method === 'HEAD') {

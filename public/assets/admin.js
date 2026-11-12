@@ -417,11 +417,25 @@
     $('itemUrlLan').value = item ? item.urlLan : '';
     $('itemUrlWan').value = item ? item.urlWan : '';
     $('itemIcon').value = item ? item.icon : '';
+    updateIconPreview($('itemIcon').value);
     $('itemTags').value = item && item.tags ? item.tags.join(', ') : '';
     $('itemPinned').checked = item ? Boolean(item.pinned) : false;
     $('itemFormError').textContent = '';
     openModal('itemModal');
     setTimeout(() => $('itemTitle').focus(), 60);
+  }
+
+  function updateIconPreview(url) {
+    const box = $('itemIconPreview');
+    if (!box) return;
+    const v = String(url || '').trim();
+    if (v) {
+      box.style.backgroundImage = `url("${v.replace(/"/g, '%22')}")`;
+      box.classList.add('has-img');
+    } else {
+      box.style.backgroundImage = '';
+      box.classList.remove('has-img');
+    }
   }
 
   function guessCategoryFor(url, title) {
@@ -431,6 +445,45 @@
     if (!guess) return '';
     return state.categories.some((c) => c.id === guess) ? guess : '';
   }
+
+  (function bindIconUpload() {
+    const pick = $('itemIconPick');
+    const file = $('itemIconFile');
+    const input = $('itemIcon');
+    const hint = $('itemIconHint');
+    if (!pick || !file) return;
+
+    pick.addEventListener('click', () => file.click());
+    input.addEventListener('input', () => updateIconPreview(input.value));
+
+    file.addEventListener('change', async () => {
+      const f = file.files && file.files[0];
+      file.value = '';
+      if (!f) return;
+      if (f.size > 512 * 1024) {
+        hint.textContent = '图片超过 512 KB，请压缩后再上传。';
+        hint.classList.add('is-error');
+        return;
+      }
+      hint.classList.remove('is-error');
+      hint.textContent = '正在上传…';
+      try {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ''));
+          reader.onerror = () => reject(new Error('读取文件失败'));
+          reader.readAsDataURL(f);
+        });
+        const res = await api('/api/admin/icon', { method: 'POST', body: JSON.stringify({ data: dataUrl }) });
+        input.value = res.url;
+        updateIconPreview(res.url);
+        hint.textContent = `已上传：${f.name}（保存修改后生效）`;
+      } catch (err) {
+        hint.classList.add('is-error');
+        hint.textContent = err.message || '上传失败';
+      }
+    });
+  })();
 
   ['itemUrlLan', 'itemUrlWan'].forEach((id) => {
     $(id).addEventListener('blur', () => {
