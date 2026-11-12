@@ -1,6 +1,8 @@
 services:
   nebula-nav:
-    build: .
+    # 现成镜像，由 GitHub Actions 自动构建并推送到 GHCR
+    # 私有包需要先执行一次 docker login ghcr.io -u <用户名> -p <token>
+    image: ghcr.io/congyuyang666/nebula-nav:latest
     container_name: nebula-nav
     restart: unless-stopped
     ports:

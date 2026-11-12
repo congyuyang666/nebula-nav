@@ -18,13 +18,18 @@
 
 ## 快速开始
 
-### Docker Compose（推荐）
+### 方式一：用现成镜像（NAS 上最省事）
+
+镜像由 GitHub Actions 自动构建，推送到 `ghcr.io/congyuyang666/nebula-nav`。仓库是私有的，所以首次拉取要先登录一次（只需一次）：
 
 ```bash
-git clone https://github.com/congyuyang666/nebula-nav-web.git nebula-nav
-cd nebula-nav
-cp .env.example .env          # 可选：先填好初始密码与会话密钥
-docker compose up -d
+echo "<你的 GitHub Token>" | docker login ghcr.io -u congyuyang666 --password-stdin
+```
+
+新建一个目录，把仓库里的 `docker-compose.yml` 放进去，然后：
+
+```bash
+docker compose up -d        # 只需要这一个 yaml，会自动创建 ./data
 ```
 
 打开 `http://<服务器IP>:8080`，首次进入：
@@ -36,7 +41,17 @@ docker compose up -d
 
 **装完第一件事**：到后台「安全与账号」把这两个密码改掉。
 
-### 直接跑 Node
+### 方式二：从源码构建
+
+```bash
+git clone https://github.com/congyuyang666/nebula-nav.git
+cd nebula-nav
+docker compose -f docker-compose.build.yml up -d --build
+```
+
+`docker-compose.build.yml` 走本地 Dockerfile，适合改了代码想立刻生效、或者不想登录 GHCR 的情况。
+
+### 方式三：直接跑 Node
 
 ```bash
 node server.js            # 需要 Node 18+，默认 8080 端口
@@ -76,7 +91,10 @@ nebula-nav/
 │   ├── favicons/            # 抓取到的站点图标缓存
 │   └── .secret              # 自动生成的会话密钥
 ├── Dockerfile
-├── docker-compose.yml
+├── docker-compose.yml        # 用现成镜像（默认）
+├── docker-compose.build.yml  # 本地源码构建
+├── .github/workflows/
+│   └── build-image.yml       # 推送 main / tag 时自动构建镜像到 GHCR
 └── .env.example
 ```
 

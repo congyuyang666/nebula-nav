@@ -1,0 +1,20 @@
+services:
+  nebula-nav:
+    # 从源码构建：需要当前目录有 Dockerfile / server.js / public/
+    build: .
+    container_name: nebula-nav
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - TZ=Asia/Shanghai
+      # 首次启动时生效；留空则用默认 123456 / admin123
+      - FRONT_PASSWORD=${FRONT_PASSWORD:-}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      # 固定会话密钥后，重建容器不会让已登录设备掉线
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      # 走 HTTPS 反代时设为 1
+      - COOKIE_SECURE=${COOKIE_SECURE:-0}
+    volumes:
+      - ./data:/data
