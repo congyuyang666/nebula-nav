@@ -13,6 +13,8 @@ const fs = require('node:fs');
 const fsp = fs.promises;
 const path = require('node:path');
 const crypto = require('node:crypto');
+const os = require('node:os');
+const { spawn } = require('node:child_process');
 
 const ROOT = __dirname;
 const VERSION = require('./package.json').version;
@@ -344,6 +346,79 @@ function normalizeVault(list) {
   });
 }
 
+/* ---------------------------------------------------------------- 系统监控 */
+
+/* CPU：采样两次 os.cpus() 的累计时间，用 idle 差值算使用率 */
+let cpuSnapshots = [];
+function readCpuTimes() {
+  let user = 0, nice = 0, sys = 0, idle = 0, iowait = 0, irq = 0, softirq = 0;
+  for (const cpu of os.cpus()) {
+    user += cpu.times.user;
+    nice += cpu.times.nice;
+    sys += cpu.times.sys;
+    idle += cpu.times.idle;
+    iowait += cpu.times.iowait || 0;
+    irq += cpu.times.irq || 0;
+    softirq += cpu.times.softirq || 0;
+  }
+  return { user, nice, sys, idle, iowait, irq, softirq, total: user + nice + sys + idle + iowait + irq + softirq };
+}
+
+function cpuUsage() {
+  const now = readCpuTimes();
+  cpuSnapshots.push({ t: Date.now(), ...now });
+  if (cpuSnapshots.length > 2) cpuSnapshots.shift();
+  if (cpuSnapshots.length < 2) return null;
+  const prev = cpuSnapshots[0];
+  const deltaTotal = now.total - prev.total;
+  const deltaIdle = now.idle - prev.idle;
+  if (deltaTotal <= 0) return null;
+  return Math.max(0, Math.min(100, (1 - deltaIdle / deltaTotal) * 100));
+}
+
+/* 磁盘：优先用 Node 内置 statfs，不支持时 fallback 到执行 df */
+async function diskInfo(targetPath) {
+  const p = targetPath || '/';
+  try {
+    if (typeof fs.statfs === 'function') {
+      const st = fs.statfsSync(p);
+      const total = BigInt(st.blocks) * BigInt(st.bsize);
+      const free = BigInt(st.bfree) * BigInt(st.bsize);
+      const used = total - free;
+      const totalNum = Number(total);
+      const usedNum = Number(used);
+      return { path: p, label: path.basename(p) || p, total: totalNum, used: usedNum, free: Number(free), usage: totalNum ? +(usedNum / totalNum * 100).toFixed(1) : 0 };
+    }
+  } catch { /* 忽略，走 fallback */ }
+  return await new Promise((resolve) => {
+    const proc = spawn('df', ['-k', p], { stdio: ['ignore', 'pipe', 'ignore'] });
+    let out = '';
+    proc.stdout.on('data', (c) => (out += c));
+    proc.on('close', () => {
+      try {
+        const lines = out.trim().split('\n');
+        if (lines.length >= 2) {
+          const parts = lines[1].trim().split(/\s+/);
+          const total = Number(parts[1]) * 1024;
+          const used = Number(parts[2]) * 1024;
+          resolve({ path: p, label: path.basename(p) || p, total, used, free: Number(parts[3]) * 1024, usage: total ? +(used / total * 100).toFixed(1) : 0 });
+          return;
+        }
+      } catch { /* 忽略 */ }
+      resolve({ path: p, label: path.basename(p) || p, total: 0, used: 0, free: 0, usage: 0 });
+    });
+    proc.on('error', () => resolve({ path: p, label: path.basename(p) || p, total: 0, used: 0, free: 0, usage: 0 }));
+  });
+}
+
+/* 批量读取磁盘，diskPaths 是逗号分隔的路径列表 */
+async function disksInfo(diskPathsStr) {
+  const paths = String(diskPathsStr || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (paths.length === 0) paths.push('/');
+  const results = await Promise.all(paths.map(diskInfo));
+  return results;
+}
+
 function publicSettings() {
   return {
     siteTitle: clip(db.settings.siteTitle, 24) || 'Nebula Nav',
@@ -351,13 +426,23 @@ function publicSettings() {
     footerNote: clip(db.settings.footerNote, 120),
     defaultMode: ['auto', 'lan', 'wan'].includes(db.settings.defaultMode) ? db.settings.defaultMode : 'lan',
     showModeSwitch: db.settings.showModeSwitch !== false,
+    showRecent: db.settings.showRecent !== false,
+    showPinned: db.settings.showPinned !== false,
+    showClock: db.settings.showClock !== false,
+    showQuote: db.settings.showQuote !== false,
+    showMonitor: db.settings.showMonitor !== false,
+    greeting: clip(db.settings.greeting, 40),
     theme: THEMES.includes(db.settings.theme) ? db.settings.theme : 'nebula',
     version: VERSION
   };
 }
 
 function adminSettings() {
-  return { ...publicSettings(), adminUsername: db.settings.adminUsername || 'admin' };
+  return {
+    ...publicSettings(),
+    adminUsername: db.settings.adminUsername || 'admin',
+    diskPaths: clip(db.settings.diskPaths, 200) || '/'
+  };
 }
 
 /* -------------------------------------------------------------------- HTTP 层 */
@@ -537,6 +622,109 @@ async function handleFavicon(req, res, url) {
   res.end(result.buffer);
 }
 
+/* 抓取网页文本（用于解析 <link rel="icon">），最多读 256 KB */
+function fetchText(url, redirects = 0) {
+  return new Promise((resolve) => {
+    const mod = url.startsWith('https:') ? https : http;
+    let req;
+    try {
+      req = mod.get(url, {
+        timeout: 5000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; NebulaNav/1.0; +https://github.com)',
+          Accept: 'text/html,application/xhtml+xml,*/*;q=0.8'
+        }
+      }, (r) => {
+        const status = r.statusCode || 0;
+        if (status >= 300 && status < 400 && r.headers.location && redirects < 4) {
+          r.resume();
+          resolve(fetchText(new URL(r.headers.location, url).toString(), redirects + 1));
+          return;
+        }
+        if (status !== 200) { r.resume(); resolve(null); return; }
+        let out = '';
+        let size = 0;
+        r.setEncoding('utf8');
+        r.on('data', (chunk) => {
+          size += chunk.length;
+          out += chunk;
+          if (size > 256 * 1024) { req.destroy(); resolve(out); }
+        });
+        r.on('end', () => resolve(out));
+      });
+    } catch {
+      resolve(null);
+      return;
+    }
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+    req.on('error', () => resolve(null));
+  });
+}
+
+/* 从 HTML 里挑一个最合适的图标地址 */
+function pickIconHref(html, baseUrl) {
+  if (!html) return null;
+  const re = /<link\b[^>]*>/gi;
+  let best = null;
+  let bestScore = -1;
+  let m;
+  while ((m = re.exec(html))) {
+    const tag = m[0];
+    if (!/rel\s*=\s*["']?[^"'>]*icon/i.test(tag)) continue;
+    const hrefMatch = /href\s*=\s*["']([^"']+)["']/i.exec(tag);
+    if (!hrefMatch) continue;
+    let score = 1;
+    if (/mask-icon/i.test(tag)) continue;
+    if (/apple-touch-icon/i.test(tag)) score = 5;
+    const sizeMatch = /sizes\s*=\s*["'](\d+)/i.exec(tag);
+    if (sizeMatch) score = 10 + Number(sizeMatch[1]) / 100;
+    if (/svg/i.test(tag)) score = 20;
+    if (score > bestScore) { bestScore = score; best = hrefMatch[1]; }
+  }
+  if (!best) return null;
+  try {
+    return new URL(best, baseUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
+/* 自动抓取网站图标，成功则存进 ICON_DIR，返回站内地址 */
+async function fetchSiteIcon(rawUrl) {
+  let target;
+  try {
+    const withScheme = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+    target = new URL(withScheme);
+  } catch {
+    return null;
+  }
+  if (!/^https?:$/.test(target.protocol)) return null;
+  const proto = isPrivateHost(target.host) ? 'http' : 'https';
+  const origin = `${proto}://${target.host}`;
+
+  const tried = new Set();
+  const tryFetch = async (u) => {
+    if (!u || tried.has(u)) return null;
+    tried.add(u);
+    return await fetchRemote(u);
+  };
+
+  let result = await tryFetch(`${origin}/favicon.ico`);
+  if (!result) {
+    const html = await fetchText(`${origin}/`);
+    const href = pickIconHref(html, `${origin}/`);
+    if (href) result = await tryFetch(href);
+  }
+  if (!result) result = await tryFetch(`${origin}/favicon.png`);
+  if (!result) return null;
+
+  const ext = detectImageExt(result.buffer);
+  if (!ext) return null;
+  const name = `${crypto.createHash('sha256').update(result.buffer).digest('hex').slice(0, 16)}.${ext}`;
+  await fsp.writeFile(path.join(ICON_DIR, name), result.buffer, { mode: 0o600 });
+  return `/icons/${name}`;
+}
+
 /* --------------------------------------------------------------- 静态文件 */
 
 const ICON_NAME_RE = /^[a-f0-9]{16}\.(png|jpg|gif|webp|ico|svg)$/;
@@ -666,6 +854,24 @@ async function handle(req, res) {
     });
   }
 
+  if (pathname === '/api/system' && method === 'GET') {
+    const session = requireRole(req, res, ['front', 'admin']);
+    if (!session) return;
+    const cpu = cpuUsage();
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const memory = { total: totalMem, used: totalMem - freeMem, free: freeMem, usage: +((totalMem - freeMem) / totalMem * 100).toFixed(1) };
+    const disks = await disksInfo(db.settings.diskPaths || '/');
+    return sendJson(res, 200, {
+      hostname: os.hostname(),
+      uptime: os.uptime(),
+      cpuCores: os.cpus().length,
+      cpuUsage: cpu != null ? +cpu.toFixed(1) : null,
+      memory,
+      disks
+    });
+  }
+
   if (pathname === '/api/favicon' && method === 'GET') {
     const session = requireRole(req, res, ['front', 'admin']);
     if (!session) return;
@@ -738,6 +944,22 @@ async function handle(req, res) {
     return sendJson(res, 200, { ok: true, url: `/icons/${name}` });
   }
 
+  if (pathname === '/api/admin/icon/fetch' && method === 'POST') {
+    const session = requireRole(req, res, ['admin']);
+    if (!session) return;
+    const body = await readJson(req, 16 * 1024);
+    const raw = clip(body.url, 500);
+    if (!raw) return sendJson(res, 400, { error: '请先填写网站地址' });
+    try {
+      const iconUrl = await fetchSiteIcon(raw);
+      if (!iconUrl) return sendJson(res, 404, { error: '没能抓取到该站点图标，可手动上传' });
+      return sendJson(res, 200, { ok: true, url: iconUrl });
+    } catch (err) {
+      log('自动获取图标失败:', err.message);
+      return sendJson(res, 500, { error: '抓取失败，请稍后重试或手动上传' });
+    }
+  }
+
   if (pathname === '/api/admin/data' && method === 'GET') {
     const session = requireRole(req, res, ['admin']);
     if (!session) return;
@@ -764,6 +986,13 @@ async function handle(req, res) {
     db.settings.footerNote = clip(s.footerNote, 120);
     db.settings.defaultMode = ['auto', 'lan', 'wan'].includes(s.defaultMode) ? s.defaultMode : 'lan';
     db.settings.showModeSwitch = s.showModeSwitch !== false;
+    db.settings.showRecent = s.showRecent !== false;
+    db.settings.showPinned = s.showPinned !== false;
+    db.settings.showClock = s.showClock !== false;
+    db.settings.showQuote = s.showQuote !== false;
+    db.settings.showMonitor = s.showMonitor !== false;
+    db.settings.greeting = clip(s.greeting, 40);
+    db.settings.diskPaths = clip(s.diskPaths, 200) || '/';
     db.settings.theme = THEMES.includes(s.theme) ? s.theme : 'nebula';
     db.updatedAt = new Date().toISOString();
     await saveDb();

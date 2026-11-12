@@ -1,5 +1,5 @@
 /* Nebula Nav · 后台交互
-   草稿模型：分类 / 网址 / 站点设置先改在内存里，点「保存修改」才写回服务器。 */
+   草稿模型：分类 / 网址 / 外观与背景先改在内存里，点「保存修改」才写回服务器。 */
 (function () {
   'use strict';
 
@@ -199,7 +199,7 @@
       : '还没有保存过数据';
   }
 
-  /* ---------------------------------------------------------- 站点设置 */
+  /* ------------------------------------------------------ 外观与背景 */
 
   function bindSettings() {
     $('setTitle').value = state.settings.siteTitle || '';
@@ -208,6 +208,13 @@
     $('setMode').value = state.settings.defaultMode || 'lan';
     $('setTheme').value = state.settings.theme || 'nebula';
     $('setShowMode').checked = state.settings.showModeSwitch !== false;
+    $('setShowRecent').checked = state.settings.showRecent !== false;
+    $('setShowPinned').checked = state.settings.showPinned !== false;
+    $('setShowClock').checked = state.settings.showClock !== false;
+    $('setShowQuote').checked = state.settings.showQuote !== false;
+    $('setShowMonitor').checked = state.settings.showMonitor !== false;
+    $('setGreeting').value = state.settings.greeting || '';
+    $('setDiskPaths').value = state.settings.diskPaths || '/';
     applyTheme(state.settings.theme);
   }
 
@@ -218,12 +225,21 @@
       footerNote: $('setFooter').value.trim(),
       defaultMode: $('setMode').value,
       theme: $('setTheme').value,
-      showModeSwitch: $('setShowMode').checked
+      showModeSwitch: $('setShowMode').checked,
+      showRecent: $('setShowRecent').checked,
+      showPinned: $('setShowPinned').checked,
+      showClock: $('setShowClock').checked,
+      showQuote: $('setShowQuote').checked,
+      showMonitor: $('setShowMonitor').checked,
+      greeting: $('setGreeting').value.trim(),
+      diskPaths: $('setDiskPaths').value.trim(),
     };
     state.settings = next;
   }
 
-  ['setTitle', 'setSubtitle', 'setFooter', 'setMode', 'setShowMode'].forEach((id) => {
+  ['setTitle', 'setSubtitle', 'setFooter', 'setMode', 'setShowMode',
+    'setShowRecent', 'setShowPinned', 'setShowClock', 'setShowQuote',
+    'setShowMonitor', 'setGreeting', 'setDiskPaths'].forEach((id) => {
     $(id).addEventListener('input', () => { readSettings(); markDirty(); });
   });
 
@@ -476,10 +492,41 @@
     const file = $('itemIconFile');
     const input = $('itemIcon');
     const hint = $('itemIconHint');
+    const fetchBtn = $('itemIconFetch');
     if (!pick || !file) return;
 
     pick.addEventListener('click', () => file.click());
     input.addEventListener('input', () => updateIconPreview(input.value));
+
+    if (fetchBtn) {
+      fetchBtn.addEventListener('click', async () => {
+        // 优先用公网地址，其次内网地址，最后用图标框里已填的地址
+        const candidates = [$('itemUrlWan').value.trim(), $('itemUrlLan').value.trim(), input.value.trim()];
+        const source = candidates.find((v) => /^https?:\/\//i.test(v) || /^[\w.-]+\.[a-z]{2,}/i.test(v));
+        if (!source) {
+          hint.classList.add('is-error');
+          hint.textContent = '请先填写站点地址，再自动获取图标。';
+          return;
+        }
+        const oldText = fetchBtn.textContent;
+        fetchBtn.disabled = true;
+        fetchBtn.textContent = '获取中…';
+        hint.classList.remove('is-error');
+        hint.textContent = '正在从网上获取图标…';
+        try {
+          const res = await api('/api/admin/icon/fetch', { method: 'POST', body: JSON.stringify({ url: source }) });
+          input.value = res.url;
+          updateIconPreview(res.url);
+          hint.textContent = '已获取图标（保存修改后生效）';
+        } catch (err) {
+          hint.classList.add('is-error');
+          hint.textContent = err.message || '获取失败，可手动上传';
+        } finally {
+          fetchBtn.disabled = false;
+          fetchBtn.textContent = oldText;
+        }
+      });
+    }
 
     file.addEventListener('change', async () => {
       const f = file.files && file.files[0];
@@ -834,7 +881,14 @@
           footerNote: String(data.settings.footerNote || '').slice(0, 120),
           defaultMode: ['auto', 'lan', 'wan'].includes(data.settings.defaultMode) ? data.settings.defaultMode : 'lan',
           theme: themes.includes(data.settings.theme) ? data.settings.theme : 'nebula',
-          showModeSwitch: data.settings.showModeSwitch !== false
+          showModeSwitch: data.settings.showModeSwitch !== false,
+          showRecent: data.settings.showRecent !== false,
+          showPinned: data.settings.showPinned !== false,
+          showClock: data.settings.showClock !== false,
+          showQuote: data.settings.showQuote !== false,
+          showMonitor: data.settings.showMonitor !== false,
+          greeting: String(data.settings.greeting || '').slice(0, 40),
+          diskPaths: String(data.settings.diskPaths || '/').slice(0, 200)
         };
       }
       bindSettings();

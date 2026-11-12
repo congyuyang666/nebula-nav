@@ -25,9 +25,41 @@
     content: document.getElementById('content'),
     brandName: document.getElementById('brandName'),
     brandSub: document.getElementById('brandSub'),
+    clock: document.getElementById('clock'),
+    welcome: document.getElementById('welcome'),
+    greetingText: document.getElementById('greetingText'),
+    quoteText: document.getElementById('quoteText'),
     footerLeft: document.getElementById('footerLeft'),
-    footerRight: document.getElementById('footerRight')
+    footerRight: document.getElementById('footerRight'),
+    monitor: document.getElementById('monitor'),
+    monitorGrid: document.getElementById('monitorGrid'),
+    monitorCpu: document.getElementById('monitorCpu'),
+    monitorCores: document.getElementById('monitorCores'),
+    monitorCpuBar: document.getElementById('monitorCpuBar'),
+    monitorCpuVal: document.getElementById('monitorCpuVal'),
+    monitorMem: document.getElementById('monitorMem'),
+    monitorMemBar: document.getElementById('monitorMemBar'),
+    monitorMemVal: document.getElementById('monitorMemVal'),
+    monitorFoot: document.getElementById('monitorFoot')
   };
+
+  /* 内置短句，避免请求外部接口（CSP 只允许本站脚本与请求） */
+  const QUOTES = [
+    '把常用的入口放在手边，剩下的交给时间。',
+    '慢一点，也是在往前走。',
+    '愿今天的网络稳定，心情也一样。',
+    '保持好奇，也保持备份。',
+    '生活不是待办清单，偶尔也要划掉几行。',
+    '把喜欢的东西放在看得见的地方。',
+    '好好吃饭，好好睡觉，好好备份。',
+    '山高路远，先把手头这件小事做好。',
+    '不必事事完美，先让它跑起来。',
+    '晴带雨伞，饱带干粮，重要数据多备份。',
+    '今天也要给自己留一点空白。',
+    '世界很大，先从这里出发。',
+    '安静的时候，最适合整理自己的收藏。',
+    '一件事做久了，就成了习惯。'
+  ];
 
   const state = {
     settings: null,
@@ -85,6 +117,166 @@
     if (text != null) node.textContent = text;
     return node;
   }
+
+  /* ------------------------------------------------------- 问候语与时钟 */
+
+  function greetingByHour(hour) {
+    if (hour >= 5 && hour <= 10) return '早上好';
+    if (hour >= 11 && hour <= 12) return '中午好';
+    if (hour >= 13 && hour <= 17) return '下午好';
+    if (hour >= 18 && hour <= 22) return '晚上好';
+    return '夜深了';
+  }
+
+  let quoteIndex = -1;
+
+  function nextQuote() {
+    if (!QUOTES.length) return '';
+    let next = quoteIndex;
+    while (next === quoteIndex) next = Math.floor(Math.random() * QUOTES.length);
+    quoteIndex = next;
+    return QUOTES[quoteIndex];
+  }
+
+  function renderWelcome(settings) {
+    if (!els.greetingText) return;
+    const custom = String((settings && settings.greeting) || '').trim();
+    els.greetingText.textContent = custom || greetingByHour(new Date().getHours());
+    if (els.quoteText) {
+      els.quoteText.hidden = settings && settings.showQuote === false;
+      els.quoteText.textContent = nextQuote();
+    }
+  }
+
+  let clockTimer = 0;
+  const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+  function startClock(settings) {
+    if (!els.clock) return;
+    els.clock.hidden = settings && settings.showClock === false;
+    let timeEl = els.clock.querySelector('.clock-time');
+    let dateEl = els.clock.querySelector('.clock-date');
+    if (!timeEl || !dateEl) {
+      els.clock.textContent = '';
+      timeEl = document.createElement('span');
+      timeEl.className = 'clock-time';
+      dateEl = document.createElement('span');
+      dateEl.className = 'clock-date';
+      els.clock.append(timeEl, dateEl);
+    }
+    const tick = () => {
+      const now = new Date();
+      timeEl.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      dateEl.textContent = `${now.getMonth() + 1}月${now.getDate()}日 ${WEEKDAYS[now.getDay()]}`;
+    };
+    tick();
+    if (!clockTimer) clockTimer = setInterval(tick, 10000);
+  }
+
+  /* ------------------------------------------------------- 系统监控 */
+
+  function formatBytes(bytes) {
+    if (bytes == null || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    let i = 0;
+    let v = bytes;
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    return `${v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2)} ${units[i]}`;
+  }
+
+  function formatSpeed(bps) {
+    if (bps == null || bps <= 0) return '0 B/s';
+    const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    let i = 0;
+    let v = bps;
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    return `${v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2)} ${units[i]}`;
+  }
+
+  let monitorTimer = 0;
+  let monitorSeq = 0;
+
+  /* 已经渲染过的磁盘卡片（按 path 缓存） */
+  const diskCards = {};
+  const diskSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><ellipse cx="12" cy="6.5" rx="8.5" ry="3.2"></ellipse><path d="M3.5 6.5V17c0 1.8 3.8 3.2 8.5 3.2s8.5-1.4 8.5-3.2V6.5" stroke-linejoin="round"></path><path d="M3.5 11c0 1.8 3.8 3.2 8.5 3.2s8.5-1.4 8.5-3.2" stroke-linejoin="round"></path></svg>';
+
+  function renderDiskCard(disk) {
+    let card = diskCards[disk.path];
+    if (!card) {
+      card = document.createElement('div');
+      card.className = 'monitor-card monitor-disk';
+      card.innerHTML = `
+        <div class="monitor-card-head">${diskSvg}<span class="monitor-disk-label"></span></div>
+        <div class="monitor-bar"><div class="monitor-bar-fill"></div></div>
+        <div class="monitor-num"></div>`;
+      els.monitorGrid.appendChild(card);
+      diskCards[disk.path] = card;
+    }
+    const bar = card.querySelector('.monitor-bar-fill');
+    const num = card.querySelector('.monitor-num');
+    const label = card.querySelector('.monitor-disk-label');
+    label.textContent = disk.label || disk.path;
+    card.title = disk.path + ' · 已用 ' + formatBytes(disk.used) + ' / 总共 ' + formatBytes(disk.total);
+    bar.style.width = Math.min(100, disk.usage) + '%';
+    num.textContent = formatBytes(disk.used) + ' / ' + formatBytes(disk.total);
+    card.classList.toggle('is-hot', disk.usage > 90);
+  }
+
+  function renderMonitor(data) {
+    if (!data) return;
+    if (els.monitorCores && data.cpuCores) els.monitorCores.textContent = data.cpuCores + ' 核';
+
+    // CPU
+    if (data.cpuUsage != null) {
+      els.monitorCpuBar.style.width = Math.min(100, data.cpuUsage) + '%';
+      els.monitorCpuVal.textContent = data.cpuUsage.toFixed(1) + '%';
+      els.monitorCpu.classList.toggle('is-hot', data.cpuUsage > 80);
+    } else {
+      els.monitorCpuBar.style.width = '0%';
+      els.monitorCpuVal.textContent = '采样中…';
+    }
+
+    // 内存
+    if (data.memory) {
+      els.monitorMemBar.style.width = Math.min(100, data.memory.usage) + '%';
+      els.monitorMemVal.textContent = formatBytes(data.memory.used) + ' / ' + formatBytes(data.memory.total);
+      els.monitorMem.classList.toggle('is-hot', data.memory.usage > 85);
+    }
+
+    // 磁盘（动态多个）
+    if (Array.isArray(data.disks)) {
+      // 清理已移除的磁盘卡片
+      const seen = new Set(data.disks.map(d => d.path));
+      Object.keys(diskCards).forEach((p) => {
+        if (!seen.has(p)) { diskCards[p].remove(); delete diskCards[p]; }
+      });
+      data.disks.forEach(renderDiskCard);
+    }
+
+    // 底部：主机名 + 运行时长
+    if (els.monitorFoot) {
+      const uptime = data.uptime ? Math.floor(data.uptime / 3600) : 0;
+      els.monitorFoot.textContent = (data.hostname || '') + ' · 运行 ' + uptime + 'h · 更新 ' + new Date().toLocaleTimeString('zh-CN');
+    }
+  }
+
+  async function fetchSystemStatus() {
+    const seq = ++monitorSeq;
+    try {
+      const data = await api('/api/system');
+      if (seq === monitorSeq) renderMonitor(data);
+    } catch { /* 网络错误就默默跳过，等下次 */ }
+  }
+
+  function startMonitor(settings) {
+    if (!els.monitor) return;
+    els.monitor.hidden = settings && settings.showMonitor === false;
+    if (els.monitor.hidden) return;
+    fetchSystemStatus();
+    if (monitorTimer) clearInterval(monitorTimer);
+    monitorTimer = setInterval(fetchSystemStatus, 10000);
+  }
+
 
   function applyTheme(theme) {
     const active = theme || 'nebula';
@@ -354,21 +546,22 @@
       .map((id) => state.items.find((i) => i.id === id))
       .filter(Boolean)
       .filter((item) => catFilter === 'all' || item.category === catFilter);
-    if (recentItems.length && catFilter === 'all') {
+    if (recentItems.length && catFilter === 'all' && !(state.settings && state.settings.showRecent === false)) {
       els.content.appendChild(buildSection('recent', '最近访问', '#8FA0B8', recentItems, { collapsible: false, compact: true }));
     }
 
     if (catFilter === 'all') {
-      const pinned = pool.filter((i) => i.pinned);
+      const showPinned = !(state.settings && state.settings.showPinned === false);
+      const pinned = showPinned ? pool.filter((i) => i.pinned) : [];
       if (pinned.length) {
         els.content.appendChild(buildSection('pinned', '常用', '#4BE1C0', pinned, { collapsible: false }));
       }
       state.categories.forEach((cat) => {
-        const items = pool.filter((i) => i.category === cat.id && !i.pinned);
+        const items = pool.filter((i) => i.category === cat.id);
         if (!items.length) return;
         els.content.appendChild(buildSection(cat.id, cat.name, cat.color, items));
       });
-      const rest = pool.filter((i) => i.pinned === false && !state.categories.some((c) => c.id === i.category));
+      const rest = pool.filter((i) => !state.categories.some((c) => c.id === i.category));
       if (rest.length) els.content.appendChild(buildSection('other', '未分类', '#8FA0B8', rest));
     } else {
       const cat = categoryOf(catFilter);
@@ -439,6 +632,12 @@
     els.themeSelect.addEventListener('change', () => {
       writeThemePref(els.themeSelect.value);
       applyTheme(effectiveTheme(state.settings ? state.settings.theme : 'nebula'));
+    });
+  }
+
+  if (els.quoteText) {
+    els.quoteText.addEventListener('click', () => {
+      els.quoteText.textContent = nextQuote();
     });
   }
 
@@ -534,6 +733,9 @@
     const savedMode = readJSON('aurora.mode', null);
     state.mode = ['auto', 'lan', 'wan'].includes(savedMode) ? savedMode : (config.settings.defaultMode || 'lan');
     els.modeSwitch.hidden = config.settings.showModeSwitch === false;
+    renderWelcome(config.settings);
+    startClock(config.settings);
+    startMonitor(config.settings);
     applyDensity();
     syncModeButtons();
     renderFilterBar();
