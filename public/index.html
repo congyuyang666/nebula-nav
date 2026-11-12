@@ -13,7 +13,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090d16'/%3E%3Cpath d='M7 22c3.6-6.4 7-10 12-12.6' stroke='%234be1c0' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M7 26c4.2-6 8.4-9.6 15-13' stroke='%238b7bff' stroke-width='2.4' fill='none' stroke-linecap='round' opacity='.85'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/app.css?v=1.2.0">
+<link rel="stylesheet" href="assets/app.css?v=1.2.1">
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -69,6 +69,17 @@
     </div>
 
     <div class="top-actions">
+      <select class="theme-select" id="themeSelect" aria-label="主题配色" title="切换主题配色">
+        <option value="">跟随默认</option>
+        <option value="nebula">星云</option>
+        <option value="ocean">深海</option>
+        <option value="forest">森林</option>
+        <option value="dusk">暮光</option>
+        <option value="sunset">落日</option>
+        <option value="graphite">石墨</option>
+        <option value="dawn">晨光（浅色）</option>
+        <option value="paper">云白（浅色）</option>
+      </select>
       <div class="mode-switch" id="modeSwitch" role="group" aria-label="网络模式">
         <button type="button" data-mode="auto" aria-pressed="false">自动</button>
         <button type="button" data-mode="lan" aria-pressed="true">内网</button>
@@ -123,6 +134,6 @@
   <div style="padding:28px;color:#8ea0b8">此页面需要启用 JavaScript 才能加载导航内容。</div>
 </noscript>
 
-<script src="assets/app.js?v=1.2.0" defer></script>
+<script src="assets/app.js?v=1.2.1" defer></script>
 </body>
 </html>

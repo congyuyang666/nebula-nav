@@ -12,6 +12,7 @@
     gateTitle: document.getElementById('gateTitle'),
     gateVersion: document.getElementById('gateVersion'),
     shell: document.getElementById('shell'),
+    themeSelect: document.getElementById('themeSelect'),
     modeSwitch: document.getElementById('modeSwitch'),
     densityBtn: document.getElementById('densityBtn'),
     densityLabel: document.getElementById('densityLabel'),
@@ -86,12 +87,37 @@
   }
 
   function applyTheme(theme) {
-    document.documentElement.dataset.theme = theme || 'nebula';
+    const active = theme || 'nebula';
+    document.documentElement.dataset.theme = active;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
       const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
       if (bg) meta.content = bg;
     }
+    const scheme = document.querySelector('meta[name="color-scheme"]');
+    if (scheme) scheme.content = (active === 'dawn' || active === 'paper') ? 'light' : 'dark';
+  }
+
+  /* 前台主题偏好：只存在当前浏览器，优先于后台的站点默认主题 */
+  const THEME_KEY = 'aurora.theme';
+
+  function readThemePref() {
+    try {
+      return localStorage.getItem(THEME_KEY) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function writeThemePref(value) {
+    try {
+      if (value) localStorage.setItem(THEME_KEY, value);
+      else localStorage.removeItem(THEME_KEY);
+    } catch (e) { /* 忽略存储失败 */ }
+  }
+
+  function effectiveTheme(defaultTheme) {
+    return readThemePref() || defaultTheme || 'nebula';
   }
 
   function isPrivateHostname(hostname) {    const h = String(hostname || '').toLowerCase();
@@ -405,6 +431,17 @@
     applyDensity();
   });
 
+  function syncThemeSelect() {
+    if (els.themeSelect) els.themeSelect.value = readThemePref();
+  }
+
+  if (els.themeSelect) {
+    els.themeSelect.addEventListener('change', () => {
+      writeThemePref(els.themeSelect.value);
+      applyTheme(effectiveTheme(state.settings ? state.settings.theme : 'nebula'));
+    });
+  }
+
   els.collapseAll.addEventListener('click', () => {
     const ids = state.categories.map((c) => c.id);
     if (!ids.length) return;
@@ -481,7 +518,8 @@
     state.settings = config.settings;
     state.categories = config.categories;
     state.items = config.items;
-    applyTheme(config.settings.theme);
+    applyTheme(effectiveTheme(config.settings.theme));
+    syncThemeSelect();
 
     els.brandName.textContent = config.settings.siteTitle || 'Nebula Nav';
     els.brandSub.textContent = config.settings.siteSubtitle || '';
@@ -517,7 +555,8 @@
     try {
       const status = await api('/api/auth/status');
       els.gateTitle.textContent = status.siteTitle || 'Nebula Nav';
-      applyTheme(status.theme);
+      applyTheme(effectiveTheme(status.theme));
+      syncThemeSelect();
       if (status.version) els.gateVersion.textContent = ` · v${status.version}`;
       if (status.role) {
         await boot();

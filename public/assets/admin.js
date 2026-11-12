@@ -827,7 +827,7 @@
         pinned: Boolean(item.pinned)
       }));
       if (data.settings) {
-        const themes = ['nebula', 'ocean', 'forest', 'dusk', 'sunset', 'graphite'];
+        const themes = ['nebula', 'ocean', 'forest', 'dusk', 'sunset', 'graphite', 'dawn', 'paper'];
         state.settings = {
           siteTitle: String(data.settings.siteTitle || 'Nebula Nav').slice(0, 24),
           siteSubtitle: String(data.settings.siteSubtitle || '').slice(0, 60),
