@@ -1,4 +1,4 @@
-/* Aurora Nav · 前台交互
+/* Nebula Nav · 前台交互
    数据来自 /api/config，模式与最近访问保存在本机 localStorage。 */
 (function () {
   'use strict';
@@ -428,11 +428,11 @@
     state.categories = config.categories;
     state.items = config.items;
 
-    els.brandName.textContent = config.settings.siteTitle || 'Aurora Nav';
+    els.brandName.textContent = config.settings.siteTitle || 'Nebula Nav';
     els.brandSub.textContent = config.settings.siteSubtitle || '';
-    els.gateTitle.textContent = config.settings.siteTitle || 'Aurora Nav';
-    document.title = `${config.settings.siteTitle || 'Aurora Nav'} · 导航`;
-    els.footerLeft.textContent = config.settings.footerNote || config.settings.siteTitle || 'Aurora Nav';
+    els.gateTitle.textContent = config.settings.siteTitle || 'Nebula Nav';
+    document.title = `${config.settings.siteTitle || 'Nebula Nav'} · 导航`;
+    els.footerLeft.textContent = config.settings.footerNote || config.settings.siteTitle || 'Nebula Nav';
     els.footerRight.textContent = config.updatedAt ? `数据更新于 ${new Date(config.updatedAt).toLocaleString('zh-CN')}` : '';
 
     const savedMode = readJSON('aurora.mode', null);
@@ -446,7 +446,7 @@
   async function init() {
     try {
       const status = await api('/api/auth/status');
-      els.gateTitle.textContent = status.siteTitle || 'Aurora Nav';
+      els.gateTitle.textContent = status.siteTitle || 'Nebula Nav';
       if (status.role) {
         await boot();
       } else {

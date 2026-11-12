@@ -1,8 +1,8 @@
 {
-  "name": "aurora-nav",
+  "name": "nebula-nav",
   "version": "1.0.0",
   "private": true,
-  "description": "自托管的极光导航页：密码门禁、后台管理、内外网切换、密码保险箱",
+  "description": "自托管的星云导航页：密码门禁、后台管理、内外网切换、密码保险箱",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

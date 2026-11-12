@@ -1,11 +1,10 @@
-# Aurora Nav · 极光导航
+# Nebula Nav · 星云导航
 
-自托管的个人导航页。
+自托管的个人导航页。前台要访问密码才看得到内容，后台可以维护分类和网址；同一个站点可分别配置内网与公网地址，一键切换；另带一个需要二次验证的密码保险箱。
 
 ![前台预览](docs/preview-front.png)
 
 ![后台预览](docs/preview-admin.png)
-前台要访问密码才看得到内容，后台可以维护分类和网址；同一个站点可分别配置内网与公网地址，一键切换；另带一个需要二次验证的密码保险箱。
 
 - **零依赖**：只用 Node 内置模块，不需要 `npm install`，镜像小、启动快
 - **单文件存储**：所有配置落在 `data/data.json`，备份就是复制一个文件
@@ -22,8 +21,8 @@
 ### Docker Compose（推荐）
 
 ```bash
-git clone https://github.com/congyuyang666/aurora-nav-web.git aurora-nav
-cd aurora-nav
+git clone https://github.com/congyuyang666/nebula-nav-web.git nebula-nav
+cd nebula-nav
 cp .env.example .env          # 可选：先填好初始密码与会话密钥
 docker compose up -d
 ```
@@ -61,14 +60,14 @@ PORT=9000 DATA_DIR=./data node server.js
 ## 目录结构
 
 ```
-aurora-nav/
+nebula-nav/
 ├── server.js                # HTTP 服务：鉴权、配置读写、图标代理
 ├── seed.json                # 首次启动的示例数据
 ├── public/
 │   ├── index.html           # 前台导航
 │   ├── admin.html           # 后台管理
 │   └── assets/
-│       ├── app.css          # 全站样式（深色极光主题）
+│       ├── app.css          # 全站样式（深色星云主题）
 │       ├── app.js           # 前台：门禁、筛选、搜索、模式切换
 │       ├── admin.js         # 后台：草稿编辑、保存、保险箱、导入导出
 │       └── taxonomy.js      # 自动分类规则
@@ -112,10 +111,10 @@ aurora-nav/
 
 ```bash
 # 备份
-cp data/data.json ~/aurora-nav-$(date +%F).json
+cp data/data.json ~/nebula-nav-$(date +%F).json
 
 # 恢复
-cp ~/aurora-nav-2026-11-11.json data/data.json && docker compose restart
+cp ~/nebula-nav-2026-11-11.json data/data.json && docker compose restart
 ```
 
 后台的「导出 JSON」只含分类、站点和站点设置，不含密码与保险箱内容。

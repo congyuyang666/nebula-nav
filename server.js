@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * Aurora Nav · 极光导航
+ * Nebula Nav · 星云导航
  * 零依赖 Node 服务：静态资源 + 密码会话 + 配置读写 + 图标代理
  * 数据落盘在 data/data.json（Docker 下默认 /data/data.json）
  */
@@ -302,7 +302,7 @@ function normalizeVault(list) {
 
 function publicSettings() {
   return {
-    siteTitle: clip(db.settings.siteTitle, 24) || 'Aurora Nav',
+    siteTitle: clip(db.settings.siteTitle, 24) || 'Nebula Nav',
     siteSubtitle: clip(db.settings.siteSubtitle, 60),
     footerNote: clip(db.settings.footerNote, 120),
     defaultMode: ['auto', 'lan', 'wan'].includes(db.settings.defaultMode) ? db.settings.defaultMode : 'lan',
@@ -380,7 +380,7 @@ function fetchRemote(url, redirects = 0) {
     const req = mod.get(url, {
       timeout: 5000,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; AuroraNav/1.0; +https://github.com)',
+        'User-Agent': 'Mozilla/5.0 (compatible; NebulaNav/1.0; +https://github.com)',
         Accept: 'image/avif,image/webp,image/png,image/svg+xml,image/*,*/*;q=0.8'
       }
     }, (r) => {
@@ -507,7 +507,7 @@ async function handle(req, res) {
     const session = getSession(req);
     return sendJson(res, 200, {
       role: session ? session.role : null,
-      siteTitle: db.settings.siteTitle || 'Aurora Nav',
+      siteTitle: db.settings.siteTitle || 'Nebula Nav',
       showModeSwitch: db.settings.showModeSwitch !== false,
       defaultMode: publicSettings().defaultMode
     });
@@ -612,7 +612,7 @@ async function handle(req, res) {
     const s = body.settings || {};
     db.categories = categories;
     db.items = items;
-    db.settings.siteTitle = clip(s.siteTitle, 24) || 'Aurora Nav';
+    db.settings.siteTitle = clip(s.siteTitle, 24) || 'Nebula Nav';
     db.settings.siteSubtitle = clip(s.siteSubtitle, 60);
     db.settings.footerNote = clip(s.footerNote, 120);
     db.settings.defaultMode = ['auto', 'lan', 'wan'].includes(s.defaultMode) ? s.defaultMode : 'lan';
@@ -700,7 +700,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  log(`Aurora Nav 已启动: http://${HOST}:${PORT}`);
+  log(`Nebula Nav 已启动: http://${HOST}:${PORT}`);
   log(`数据目录: ${DATA_DIR}`);
 });
 

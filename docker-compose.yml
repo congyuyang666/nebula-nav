@@ -1,7 +1,7 @@
 services:
-  aurora-nav:
+  nebula-nav:
     build: .
-    container_name: aurora-nav
+    container_name: nebula-nav
     restart: unless-stopped
     ports:
       - "8080:8080"

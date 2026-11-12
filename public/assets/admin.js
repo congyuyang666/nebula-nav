@@ -1,4 +1,4 @@
-/* Aurora Nav · 后台交互
+/* Nebula Nav · 后台交互
    草稿模型：分类 / 网址 / 站点设置先改在内存里，点「保存修改」才写回服务器。 */
 (function () {
   'use strict';
@@ -196,7 +196,7 @@
 
   function readSettings() {
     const next = {
-      siteTitle: $('setTitle').value.trim() || 'Aurora Nav',
+      siteTitle: $('setTitle').value.trim() || 'Nebula Nav',
       siteSubtitle: $('setSubtitle').value.trim(),
       footerNote: $('setFooter').value.trim(),
       defaultMode: $('setMode').value,
@@ -696,7 +696,7 @@
 
   $('exportJson').addEventListener('click', () => {
     readSettings();
-    download('aurora-nav-backup.json', JSON.stringify({
+    download('nebula-nav-backup.json', JSON.stringify({
       version: 1,
       exportedAt: new Date().toISOString(),
       settings: state.settings,
@@ -734,7 +734,7 @@
       }));
       if (data.settings) {
         state.settings = {
-          siteTitle: String(data.settings.siteTitle || 'Aurora Nav').slice(0, 24),
+          siteTitle: String(data.settings.siteTitle || 'Nebula Nav').slice(0, 24),
           siteSubtitle: String(data.settings.siteSubtitle || '').slice(0, 60),
           footerNote: String(data.settings.footerNote || '').slice(0, 120),
           defaultMode: ['auto', 'lan', 'wan'].includes(data.settings.defaultMode) ? data.settings.defaultMode : 'lan',

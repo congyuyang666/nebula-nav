@@ -1,8 +1,8 @@
 {
   "version": 1,
   "settings": {
-    "siteTitle": "Aurora Nav",
-    "siteSubtitle": "极光导航 · 自托管的起始页",
+    "siteTitle": "Nebula Nav",
+    "siteSubtitle": "星云导航 · 自托管的起始页",
     "footerNote": "数据存在自己的机器上。",
     "defaultMode": "lan",
     "showModeSwitch": true,
