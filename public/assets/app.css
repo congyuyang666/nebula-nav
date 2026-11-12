@@ -627,6 +627,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-radius: inherit;
 }
 .card-icon.is-letter { background: color-mix(in srgb, var(--c, var(--aurora)) 12%, var(--panel)); }
+/* 已经有图标图片时隐藏首字母，避免透明图透出文字；加载失败会恢复 is-letter */
+.card-icon:not(.is-letter) .letter { display: none; }
 
 .card-body { min-width: 0; flex: 1; }
 .card-name {
