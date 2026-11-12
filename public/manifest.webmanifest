@@ -1,0 +1,25 @@
+{
+  "name": "Nebula Nav · 星云导航",
+  "short_name": "Nebula Nav",
+  "description": "自托管的个人导航页：密码门禁、后台管理、内外网切换与密码保险箱。",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#070a12",
+  "theme_color": "#070a12",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

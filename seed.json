@@ -6,6 +6,7 @@
     "footerNote": "数据存在自己的机器上。",
     "defaultMode": "lan",
     "showModeSwitch": true,
+    "theme": "nebula",
     "frontPasswordHash": "",
     "adminUsername": "admin",
     "adminPasswordHash": ""

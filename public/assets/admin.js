@@ -36,6 +36,7 @@
     editingItemId: null,
     editingVaultId: null,
     siteQuery: '',
+    vaultQuery: '',
     panel: 'settings'
   };
 
@@ -118,11 +119,24 @@
     }
   }
 
+  /* 添加网址时允许只填 192.168.1.10:8080，自动补上 http:// */
+  function ensureScheme(value) {
+    const v = String(value || '').trim();
+    if (!v) return '';
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) return v;
+    return `http://${v}`;
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme || 'nebula';
+  }
+
   /* -------------------------------------------------------------- 启动 */
 
   async function init() {
     try {
       const status = await api('/api/auth/status');
+      applyTheme(status.theme);
       if (status.role === 'admin') {
         await loadAdmin();
       } else {
@@ -166,6 +180,7 @@
     state.dirty = false;
     $('adminLogin').hidden = true;
     $('adminShell').hidden = false;
+    $('adminVersion').textContent = data.settings.version ? `v${data.settings.version}` : '—';
     bindSettings();
     renderCategories();
     renderSites();
@@ -191,7 +206,9 @@
     $('setSubtitle').value = state.settings.siteSubtitle || '';
     $('setFooter').value = state.settings.footerNote || '';
     $('setMode').value = state.settings.defaultMode || 'lan';
+    $('setTheme').value = state.settings.theme || 'nebula';
     $('setShowMode').checked = state.settings.showModeSwitch !== false;
+    applyTheme(state.settings.theme);
   }
 
   function readSettings() {
@@ -200,6 +217,7 @@
       siteSubtitle: $('setSubtitle').value.trim(),
       footerNote: $('setFooter').value.trim(),
       defaultMode: $('setMode').value,
+      theme: $('setTheme').value,
       showModeSwitch: $('setShowMode').checked
     };
     state.settings = next;
@@ -207,6 +225,13 @@
 
   ['setTitle', 'setSubtitle', 'setFooter', 'setMode', 'setShowMode'].forEach((id) => {
     $(id).addEventListener('input', () => { readSettings(); markDirty(); });
+  });
+
+  // 换主题立即预览，点「保存修改」后写回服务器
+  $('setTheme').addEventListener('input', () => {
+    readSettings();
+    applyTheme(state.settings.theme);
+    markDirty();
   });
 
   /* ------------------------------------------------------------ 分类管理 */
@@ -487,8 +512,9 @@
 
   ['itemUrlLan', 'itemUrlWan'].forEach((id) => {
     $(id).addEventListener('blur', () => {
-      const url = $(id).value.trim();
+      const url = ensureScheme($(id).value);
       if (!url) return;
+      $(id).value = url;
       if (!$('itemTitle').value.trim()) {
         try {
           const host = new URL(url).hostname.replace(/^www\./, '');
@@ -505,8 +531,8 @@
   $('itemForm').addEventListener('submit', (event) => {
     event.preventDefault();
     const title = $('itemTitle').value.trim();
-    const lan = $('itemUrlLan').value.trim();
-    const wan = $('itemUrlWan').value.trim();
+    const lan = ensureScheme($('itemUrlLan').value);
+    const wan = ensureScheme($('itemUrlWan').value);
     if (!title) {
       $('itemFormError').textContent = '请填写站点名称';
       return;
@@ -573,6 +599,8 @@
     $('vaultOpen').hidden = true;
     $('vaultError').textContent = '';
     $('vaultPassword').value = '';
+    $('vaultSearch').value = '';
+    state.vaultQuery = '';
   }
 
   function renderVault() {
@@ -585,7 +613,14 @@
       list.appendChild(el('p', 'form-hint', '保险箱还是空的，点「添加条目」。'));
       return;
     }
-    state.vaultEntries.forEach((entry, index) => {
+    const query = state.vaultQuery.trim().toLowerCase();
+    const entries = state.vaultEntries.filter((entry) => !query
+      || [entry.title, entry.username, entry.note, entry.url].join(' ').toLowerCase().includes(query));
+    if (!entries.length) {
+      list.appendChild(el('p', 'form-hint', '没有匹配的条目。'));
+      return;
+    }
+    entries.forEach((entry) => {
       const item = el('div', 'vault-item');
       const left = el('div');
       left.appendChild(el('div', 'vault-title', entry.title));
@@ -630,12 +665,13 @@
       actions.style.alignItems = 'flex-start';
       const edit = el('button', null, '编辑');
       edit.type = 'button';
-      edit.addEventListener('click', () => openVaultModal(index));
+      edit.addEventListener('click', () => openVaultModal(entry));
       const del = el('button', 'danger', '删除');
       del.type = 'button';
       del.addEventListener('click', () => {
         if (!confirm(`删除保险箱条目「${entry.title}」？`)) return;
-        state.vaultEntries.splice(index, 1);
+        const index = state.vaultEntries.indexOf(entry);
+        if (index >= 0) state.vaultEntries.splice(index, 1);
         renderVault();
       });
       actions.appendChild(edit);
@@ -671,9 +707,9 @@
     renderVaultLocked();
   });
 
-  function openVaultModal(index) {
-    const entry = index == null ? null : state.vaultEntries[index];
-    state.editingVaultId = index == null ? null : index;
+  function openVaultModal(entry) {
+    const index = entry ? state.vaultEntries.indexOf(entry) : -1;
+    state.editingVaultId = index >= 0 ? index : null;
     $('vaultModalTitle').textContent = entry ? '编辑条目' : '新增条目';
     $('vaultTitle').value = entry ? entry.title : '';
     $('vaultUser').value = entry ? entry.username : '';
@@ -685,6 +721,11 @@
   }
 
   $('addVaultEntry').addEventListener('click', () => openVaultModal(null));
+
+  $('vaultSearch').addEventListener('input', () => {
+    state.vaultQuery = $('vaultSearch').value;
+    renderVault();
+  });
 
   $('vaultEntryForm').addEventListener('submit', (event) => {
     event.preventDefault();
@@ -786,11 +827,13 @@
         pinned: Boolean(item.pinned)
       }));
       if (data.settings) {
+        const themes = ['nebula', 'ocean', 'forest', 'dusk', 'sunset', 'graphite'];
         state.settings = {
           siteTitle: String(data.settings.siteTitle || 'Nebula Nav').slice(0, 24),
           siteSubtitle: String(data.settings.siteSubtitle || '').slice(0, 60),
           footerNote: String(data.settings.footerNote || '').slice(0, 120),
           defaultMode: ['auto', 'lan', 'wan'].includes(data.settings.defaultMode) ? data.settings.defaultMode : 'lan',
+          theme: themes.includes(data.settings.theme) ? data.settings.theme : 'nebula',
           showModeSwitch: data.settings.showModeSwitch !== false
         };
       }

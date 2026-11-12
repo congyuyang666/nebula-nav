@@ -10,8 +10,12 @@
     gateError: document.getElementById('gateError'),
     gateSubmit: document.getElementById('gateSubmit'),
     gateTitle: document.getElementById('gateTitle'),
+    gateVersion: document.getElementById('gateVersion'),
     shell: document.getElementById('shell'),
     modeSwitch: document.getElementById('modeSwitch'),
+    densityBtn: document.getElementById('densityBtn'),
+    densityLabel: document.getElementById('densityLabel'),
+    collapseAll: document.getElementById('collapseAll'),
     lockBtn: document.getElementById('lockBtn'),
     searchInput: document.getElementById('searchInput'),
     searchMeta: document.getElementById('searchMeta'),
@@ -32,7 +36,8 @@
     activeCategory: 'all',
     query: '',
     collapsed: readJSON('aurora.collapsed', {}),
-    recent: readJSON('aurora.recent', [])
+    recent: readJSON('aurora.recent', []),
+    density: readJSON('aurora.density', 'standard')
   };
 
   function readJSON(key, fallback) {
@@ -80,8 +85,16 @@
     return node;
   }
 
-  function isPrivateHostname(hostname) {
-    const h = String(hostname || '').toLowerCase();
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme || 'nebula';
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+      if (bg) meta.content = bg;
+    }
+  }
+
+  function isPrivateHostname(hostname) {    const h = String(hostname || '').toLowerCase();
     if (!h) return true;
     if (h === 'localhost' || h.endsWith('.local') || h.endsWith('.lan')) return true;
     if (/^10\./.test(h) || /^192\.168\./.test(h) || /^127\./.test(h)) return true;
@@ -292,6 +305,7 @@
 
   function renderContent() {
     els.content.textContent = '';
+    syncCollapseAll();
     const query = state.query.trim().toLowerCase();
     const catFilter = state.activeCategory;
 
@@ -351,6 +365,22 @@
     els.clearSearch.hidden = !state.query;
   }
 
+  /* ------------------------------------------------------- 密度与折叠 */
+
+  function applyDensity() {
+    const compact = state.density === 'compact';
+    document.body.classList.toggle('density-compact', compact);
+    els.densityBtn.setAttribute('aria-pressed', String(compact));
+    els.densityLabel.textContent = compact ? '紧凑' : '标准';
+  }
+
+  function syncCollapseAll() {
+    const ids = state.categories.map((c) => c.id);
+    const anyOpen = ids.some((id) => !state.collapsed[id]);
+    els.collapseAll.textContent = anyOpen ? '全部折叠' : '全部展开';
+    els.collapseAll.hidden = !ids.length;
+  }
+
   function remember(id) {
     const list = state.recent.filter((x) => x !== id);
     list.unshift(id);
@@ -366,6 +396,21 @@
     state.mode = btn.dataset.mode;
     writeJSON('aurora.mode', state.mode);
     syncModeButtons();
+    renderContent();
+  });
+
+  els.densityBtn.addEventListener('click', () => {
+    state.density = state.density === 'compact' ? 'standard' : 'compact';
+    writeJSON('aurora.density', state.density);
+    applyDensity();
+  });
+
+  els.collapseAll.addEventListener('click', () => {
+    const ids = state.categories.map((c) => c.id);
+    if (!ids.length) return;
+    const anyOpen = ids.some((id) => !state.collapsed[id]);
+    ids.forEach((id) => { state.collapsed[id] = anyOpen; });
+    writeJSON('aurora.collapsed', state.collapsed);
     renderContent();
   });
 
@@ -399,6 +444,15 @@
     els.searchInput.focus();
   });
 
+  // 搜索框回车直接打开第一个匹配结果
+  els.searchInput.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    const first = els.content.querySelector('.card[href]');
+    if (!first) return;
+    event.preventDefault();
+    window.open(first.href, '_blank', 'noopener');
+  });
+
   document.addEventListener('keydown', (event) => {
     if (event.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) {
       event.preventDefault();
@@ -427,26 +481,44 @@
     state.settings = config.settings;
     state.categories = config.categories;
     state.items = config.items;
+    applyTheme(config.settings.theme);
 
     els.brandName.textContent = config.settings.siteTitle || 'Nebula Nav';
     els.brandSub.textContent = config.settings.siteSubtitle || '';
     els.gateTitle.textContent = config.settings.siteTitle || 'Nebula Nav';
     document.title = `${config.settings.siteTitle || 'Nebula Nav'} · 导航`;
     els.footerLeft.textContent = config.settings.footerNote || config.settings.siteTitle || 'Nebula Nav';
-    els.footerRight.textContent = config.updatedAt ? `数据更新于 ${new Date(config.updatedAt).toLocaleString('zh-CN')}` : '';
+    els.footerRight.textContent = [
+      config.updatedAt ? `数据更新于 ${new Date(config.updatedAt).toLocaleString('zh-CN')}` : '',
+      config.settings.version ? `v${config.settings.version}` : ''
+    ].filter(Boolean).join(' · ');
 
     const savedMode = readJSON('aurora.mode', null);
     state.mode = ['auto', 'lan', 'wan'].includes(savedMode) ? savedMode : (config.settings.defaultMode || 'lan');
     els.modeSwitch.hidden = config.settings.showModeSwitch === false;
+    applyDensity();
     syncModeButtons();
     renderFilterBar();
     renderContent();
+    // 首屏卡片做一次轻量淡入，之后筛选/搜索不再重放
+    els.content.classList.add('is-first');
+    setTimeout(() => els.content.classList.remove('is-first'), 700);
+  }
+
+  function registerSW() {
+    if (!('serviceWorker' in navigator)) return;
+    const secure = location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname);
+    if (!secure) return;
+    navigator.serviceWorker.register('/sw.js').catch(() => { /* 注册失败不影响使用 */ });
   }
 
   async function init() {
+    registerSW();
     try {
       const status = await api('/api/auth/status');
       els.gateTitle.textContent = status.siteTitle || 'Nebula Nav';
+      applyTheme(status.theme);
+      if (status.version) els.gateVersion.textContent = ` · v${status.version}`;
       if (status.role) {
         await boot();
       } else {

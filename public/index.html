@@ -6,8 +6,14 @@
 <title>Nebula Nav · 星云导航</title>
 <meta name="color-scheme" content="dark">
 <meta name="description" content="自托管的个人导航页：密码门禁、后台管理、内外网切换与密码保险箱。">
+<meta name="theme-color" content="#070a12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nebula Nav">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon.svg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090d16'/%3E%3Cpath d='M7 22c3.6-6.4 7-10 12-12.6' stroke='%234be1c0' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M7 26c4.2-6 8.4-9.6 15-13' stroke='%238b7bff' stroke-width='2.4' fill='none' stroke-linecap='round' opacity='.85'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/app.css?v=1.2.0">
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -36,7 +42,7 @@
       <p class="gate-error" id="gateError" role="alert"></p>
       <button class="btn btn-primary btn-block" id="gateSubmit" type="submit">进入导航</button>
     </form>
-    <p class="gate-foot">密码与站点数据只保存在你自己的服务器上</p>
+    <p class="gate-foot">密码与站点数据只保存在你自己的服务器上<span id="gateVersion"></span></p>
   </div>
 </div>
 
@@ -68,6 +74,10 @@
         <button type="button" data-mode="lan" aria-pressed="true">内网</button>
         <button type="button" data-mode="wan" aria-pressed="false">公网</button>
       </div>
+      <button class="icon-btn" id="densityBtn" type="button" aria-pressed="false" title="切换卡片密度">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="5" width="7" height="6" rx="1.4"></rect><rect x="13" y="5" width="7" height="6" rx="1.4"></rect><rect x="4" y="13" width="7" height="6" rx="1.4"></rect><rect x="13" y="13" width="7" height="6" rx="1.4"></rect></svg>
+        <span id="densityLabel">标准</span>
+      </button>
       <a class="icon-btn" href="/admin.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke-linecap="round"></path><circle cx="16" cy="7" r="2.2"></circle><circle cx="10" cy="17" r="2.2"></circle></svg>
         管理
@@ -87,7 +97,10 @@
     </div>
     <div class="search-meta">
       <span id="searchMeta">正在加载…</span>
-      <button class="clear-btn" id="clearSearch" type="button" hidden>清除搜索</button>
+      <span class="search-meta-actions">
+        <button class="clear-btn" id="collapseAll" type="button">全部折叠</button>
+        <button class="clear-btn" id="clearSearch" type="button" hidden>清除搜索</button>
+      </span>
     </div>
   </section>
 
@@ -110,6 +123,6 @@
   <div style="padding:28px;color:#8ea0b8">此页面需要启用 JavaScript 才能加载导航内容。</div>
 </noscript>
 
-<script src="assets/app.js" defer></script>
+<script src="assets/app.js?v=1.2.0" defer></script>
 </body>
 </html>

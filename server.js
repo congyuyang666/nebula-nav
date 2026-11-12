@@ -15,6 +15,8 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const ROOT = __dirname;
+const VERSION = require('./package.json').version;
+const THEMES = ['nebula', 'ocean', 'forest', 'dusk', 'sunset', 'graphite'];
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
@@ -46,6 +48,7 @@ const MIME = {
   '.webp': 'image/webp',
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8'
 };
 
@@ -85,8 +88,10 @@ function slugify(value, fallback) {
 }
 
 function safeUrl(value) {
-  const v = String(value || '').trim();
+  let v = String(value || '').trim();
   if (!v) return '';
+  // 兼容只填 192.168.1.10:8080 的写法，统一补成 http://
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(v) && /^[\w.-]+(:\d+)?(\/.*)?$/i.test(v)) v = `http://${v}`;
   if (/^https?:\/\/[^\s]+$/i.test(v)) return v.slice(0, 300);
   return '';
 }
@@ -177,9 +182,24 @@ function clearSessionCookie(res) {
 
 const failures = new Map();
 
+/* 判断是否为内网 / 回环地址：只有反代来自这些地址时才信任 X-Forwarded-For */
+function isPrivateIp(ip) {
+  const raw = String(ip || '').replace(/^::ffff:/i, '');
+  if (!raw) return false;
+  if (raw === '::1' || raw === '127.0.0.1' || raw === 'localhost') return true;
+  if (/^127\./.test(raw) || /^10\./.test(raw) || /^192\.168\./.test(raw)) return true;
+  const m = raw.match(/^172\.(\d+)\./);
+  if (m && Number(m[1]) >= 16 && Number(m[1]) <= 31) return true;
+  if (/^f[cd][0-9a-f]{2}:/i.test(raw)) return true;
+  return false;
+}
+
 function clientIp(req) {
+  const direct = req.socket.remoteAddress || 'unknown';
+  // 公网直连时忽略 X-Forwarded-For，避免伪造请求头绕过登录限流
+  if (!isPrivateIp(direct)) return direct;
   const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  return forwarded || req.socket.remoteAddress || 'unknown';
+  return forwarded || direct;
 }
 
 function checkRate(req) {
@@ -330,7 +350,9 @@ function publicSettings() {
     siteSubtitle: clip(db.settings.siteSubtitle, 60),
     footerNote: clip(db.settings.footerNote, 120),
     defaultMode: ['auto', 'lan', 'wan'].includes(db.settings.defaultMode) ? db.settings.defaultMode : 'lan',
-    showModeSwitch: db.settings.showModeSwitch !== false
+    showModeSwitch: db.settings.showModeSwitch !== false,
+    theme: THEMES.includes(db.settings.theme) ? db.settings.theme : 'nebula',
+    version: VERSION
   };
 }
 
@@ -384,16 +406,48 @@ function requireRole(req, res, roles) {
   return session;
 }
 
+/* 静态响应的通用安全头 */
+function securityHeaders(res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+}
+
+/* 页面级 CSP：脚本只能来自本站，图标允许外链与 data: 内联图形 */
+const HTML_CSP = [
+  "default-src 'self'",
+  "img-src 'self' data: http: https:",
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self'",
+  "connect-src 'self'",
+  "base-uri 'none'",
+  "form-action 'self'",
+  "frame-ancestors 'none'"
+].join('; ');
+
 /* ---------------------------------------------------------------- 图标代理 */
 
 function sha1(value) {
   return crypto.createHash('sha1').update(value).digest('hex');
 }
 
+const FAVICON_TTL = 7 * 24 * 3600 * 1000;
+
 function faviconPath(hostSha) {
   for (const ext of Object.values(ICON_EXT)) {
     const file = path.join(FAVICON_DIR, `${hostSha}.${ext}`);
-    if (fs.existsSync(file)) return file;
+    if (!fs.existsSync(file)) continue;
+    try {
+      // 与响应头的 7 天缓存保持一致，过期文件主动删除后重新抓取
+      if (Date.now() - fs.statSync(file).mtimeMs > FAVICON_TTL) {
+        fs.unlinkSync(file);
+        continue;
+      }
+    } catch {
+      continue;
+    }
+    return file;
   }
   return null;
 }
@@ -506,13 +560,15 @@ async function serveIcon(req, res, pathname) {
     return res.end('404 Not Found');
   }
   const ext = path.extname(file).toLowerCase();
+  securityHeaders(res);
   res.writeHead(200, {
     'Content-Type': MIME[ext] || 'application/octet-stream',
+    'Content-Length': stat.size,
     'Cache-Control': 'public, max-age=604800',
-    'X-Content-Type-Options': 'nosniff',
     // 上传的 SVG 里可能带脚本，直接打开时禁掉一切执行能力
     'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox"
   });
+  if (req.method === 'HEAD') return res.end();
   fs.createReadStream(file).pipe(res);
 }
 
@@ -538,12 +594,17 @@ async function serveStatic(req, res, pathname) {
   const type = MIME[ext] || 'application/octet-stream';
   // 静态资源：图片可长缓存，HTML/CSS/JS 每次回源校验，改完刷新即生效
   const longCache = ['.png', '.jpg', '.jpeg', '.webp', '.svg', '.ico', '.woff2'].includes(ext);
-  const cache = longCache ? 'public, max-age=604800' : 'no-cache';
-  res.writeHead(200, {
+  // HTML 禁止任何缓存，避免升级后仍加载旧页面；CSS/JS 每次回源校验
+  const cache = ext === '.html' ? 'no-store' : longCache ? 'public, max-age=604800' : 'no-cache';
+  securityHeaders(res);
+  const headers = {
     'Content-Type': type,
-    'Cache-Control': cache,
-    'X-Content-Type-Options': 'nosniff'
-  });
+    'Content-Length': stat.size,
+    'Cache-Control': cache
+  };
+  if (ext === '.html') headers['Content-Security-Policy'] = HTML_CSP;
+  res.writeHead(200, headers);
+  if (req.method === 'HEAD') return res.end();
   fs.createReadStream(file).pipe(res);
 }
 
@@ -551,7 +612,13 @@ async function serveStatic(req, res, pathname) {
 
 async function handle(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const pathname = decodeURIComponent(url.pathname);
+  // 非法百分号编码会让 decodeURIComponent 抛错，按客户端错误处理
+  let pathname;
+  try {
+    pathname = decodeURIComponent(url.pathname);
+  } catch {
+    return sendJson(res, 400, { error: 'bad request' });
+  }
   const method = req.method || 'GET';
 
   if (method === 'GET' && pathname === '/api/health') {
@@ -564,7 +631,9 @@ async function handle(req, res) {
       role: session ? session.role : null,
       siteTitle: db.settings.siteTitle || 'Nebula Nav',
       showModeSwitch: db.settings.showModeSwitch !== false,
-      defaultMode: publicSettings().defaultMode
+      defaultMode: publicSettings().defaultMode,
+      theme: publicSettings().theme,
+      version: VERSION
     });
   }
 
@@ -695,6 +764,7 @@ async function handle(req, res) {
     db.settings.footerNote = clip(s.footerNote, 120);
     db.settings.defaultMode = ['auto', 'lan', 'wan'].includes(s.defaultMode) ? s.defaultMode : 'lan';
     db.settings.showModeSwitch = s.showModeSwitch !== false;
+    db.settings.theme = THEMES.includes(s.theme) ? s.theme : 'nebula';
     db.updatedAt = new Date().toISOString();
     await saveDb();
     return sendJson(res, 200, {
