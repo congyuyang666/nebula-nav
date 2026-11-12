@@ -16,7 +16,7 @@ const crypto = require('node:crypto');
 
 const ROOT = __dirname;
 const VERSION = require('./package.json').version;
-const THEMES = ['nebula', 'ocean', 'forest', 'dusk', 'sunset', 'graphite'];
+const THEMES = ['nebula', 'ocean', 'forest', 'dusk', 'sunset', 'graphite', 'dawn', 'paper'];
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
