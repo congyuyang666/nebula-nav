@@ -56,6 +56,7 @@ const MIME = {
 
 const ICON_EXT = { ico: 'ico', png: 'png', svg: 'svg', jpeg: 'jpg', jpg: 'jpg', gif: 'gif', webp: 'webp' };
 const CATEGORY_ICONS = ['film', 'drive', 'code', 'spark', 'book', 'flow', 'grid', 'star', 'link', 'shield'];
+const GITHUB_KEY_FILE = path.join(DATA_DIR, '.github_key');
 
 /* ---------------------------------------------------------------- 基础设施 */
 
@@ -473,8 +474,246 @@ function adminSettings() {
   return {
     ...publicSettings(),
     adminUsername: db.settings.adminUsername || 'admin',
-    diskPaths: clip(db.settings.diskPaths, 200) || '/'
+    diskPaths: clip(db.settings.diskPaths, 200) || '/',
+    github: sanitizeGithubForAdmin()
   };
+}
+
+/* --------------------------------- GitHub 配置（加密存 token） --------------------------------- */
+
+function loadGithubKey() {
+  try { return fs.readFileSync(GITHUB_KEY_FILE); } catch {
+    const k = crypto.randomBytes(32);
+    fs.writeFileSync(GITHUB_KEY_FILE, k, { mode: 0o600 });
+    return k;
+  }
+}
+let GITHUB_KEY = null;
+function githubEncrypt(plain) {
+  if (!plain) return '';
+  GITHUB_KEY = GITHUB_KEY || loadGithubKey();
+  const iv = crypto.randomBytes(12);
+  const c = crypto.createCipheriv('aes-256-gcm', GITHUB_KEY, iv);
+  const enc = Buffer.concat([c.update(plain, 'utf8'), c.final()]);
+  const tag = c.getAuthTag();
+  return Buffer.concat([iv, tag, enc]).toString('base64');
+}
+function githubDecrypt(cipher) {
+  if (!cipher) return '';
+  try {
+    GITHUB_KEY = GITHUB_KEY || loadGithubKey();
+    const buf = Buffer.from(cipher, 'base64');
+    const iv = buf.subarray(0, 12);
+    const tag = buf.subarray(12, 28);
+    const enc = buf.subarray(28);
+    const d = crypto.createDecipheriv('aes-256-gcm', GITHUB_KEY, iv);
+    d.setAuthTag(tag);
+    return Buffer.concat([d.update(enc), d.final()]).toString('utf8');
+  } catch { return ''; }
+}
+
+function sanitizeGithubForAdmin() {
+  const g = db.settings.github || {};
+  return {
+    username: clip(g.username, 64),
+    repo: clip(g.repo, 120),
+    branch: clip(g.branch, 64) || 'main',
+    tokenSet: !!g.tokenCipher,
+    tokenTail: g.tokenCipher ? '****' + githubDecrypt(g.tokenCipher).slice(-4) : '',
+    lastSyncAt: g.lastSyncAt || null,
+    lastSyncMsg: g.lastSyncMsg || '',
+    enabled: g.enabled !== false
+  };
+}
+
+function githubConfig() {
+  const g = db.settings.github || {};
+  const token = githubDecrypt(g.tokenCipher);
+  if (!g.username || !g.repo || !g.branch || !token) return null;
+  return { username: g.username, repo: g.repo, branch: g.branch, token, enabled: g.enabled !== false };
+}
+
+/* -------- HTTP 请求封装（原生 https） -------- */
+function ghFetch(path, { method = 'GET', token, body, base = 'api.github.com' } = {}) {
+  return new Promise((resolve, reject) => {
+    const data = body ? Buffer.from(JSON.stringify(body), 'utf8') : null;
+    const url = new URL(`https://${base}${path}`);
+    const req = https.request({
+      method,
+      hostname: url.hostname,
+      port: 443,
+      path: url.pathname + url.search,
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        'User-Agent': 'nebula-nav',
+        ...(data ? { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': data.length } : {})
+      },
+      timeout: 15000
+    }, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8');
+        const json = text ? safeParse(text) : {};
+        resolve({ status: res.statusCode || 0, body: json, text });
+      });
+    });
+    req.on('timeout', () => { req.destroy(new Error('timeout')); });
+    req.on('error', reject);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+function safeParse(text) { try { return JSON.parse(text); } catch { return null; } }
+
+/* -------- 验证 token -------- */
+async function githubTest(cfg) {
+  const r = await ghFetch('/user', { token: cfg.token });
+  if (r.status === 200) return { ok: true, login: r.body.login };
+  if (r.status === 401) return { ok: false, error: 'Token 无效或已过期' };
+  if (r.status === 403) return { ok: false, error: 'Token 权限不足' };
+  return { ok: false, error: `GitHub 返回 ${r.status}` };
+}
+
+/* -------- 读取远程 data.json 的 sha（存在才能更新） -------- */
+async function githubGetFile(cfg, filePath = 'data.json') {
+  const path = `/repos/${cfg.username}/${cfg.repo}/contents/${encodeURIComponent(filePath)}?ref=${encodeURIComponent(cfg.branch)}`;
+  const r = await ghFetch(path, { token: cfg.token });
+  if (r.status === 200) return { exists: true, sha: r.body.sha, content: r.body.content ? Buffer.from(r.body.content, 'base64').toString('utf8') : '' };
+  if (r.status === 404) return { exists: false };
+  return { error: `GitHub ${r.status}` };
+}
+
+/* -------- 推送本地 data.json -------- */
+async function githubPush(cfg) {
+  const filePath = 'data.json';
+  const localContent = JSON.stringify({ categories: db.categories, items: db.items, updatedAt: db.updatedAt || null }, null, 2);
+  const localBase64 = Buffer.from(localContent, 'utf8').toString('base64');
+  const remote = await githubGetFile(cfg, filePath);
+  if (remote.error) throw new Error(remote.error);
+  const remoteSha = remote.exists ? remote.sha : undefined;
+  const remoteContent = remote.exists ? remote.content : '';
+
+  // 内容没变就不推（省 quota）
+  if (remote.exists && remoteContent && JSON.stringify(JSON.parse(remoteContent || '{}'), null, 2) === localContent) {
+    return { ok: true, skipped: true, message: '内容未变化' };
+  }
+
+  const path = `/repos/${cfg.username}/${cfg.repo}/contents/${encodeURIComponent(filePath)}`;
+  const r = await ghFetch(path, {
+    method: 'PUT',
+    token: cfg.token,
+    body: {
+      message: `sync: ${new Date().toISOString()}`,
+      content: localBase64,
+      branch: cfg.branch,
+      ...(remoteSha ? { sha: remoteSha } : {})
+    }
+  });
+  if (r.status === 200 || r.status === 201) return { ok: true, sha: r.body.content?.sha };
+  throw new Error(r.body?.message || `GitHub ${r.status}`);
+}
+
+/* -------- IPv4/IPv6 地理位置（双源兜底） --------
+   优先 ip-api.com（免费但只支持 HTTP，IPv4 精准）；
+   失败或 IPv6 时退 ipwho.is（免费 HTTPS，IPv6 友好）。
+   结果缓存 24h。 */
+const GEO_CACHE = new Map(); // ip → { cc, country, ttlAt }
+const GEO_TTL_MS = 24 * 3600 * 1000;
+
+async function geoLookup(ip) {
+  if (!ip) return null;
+  const now = Date.now();
+  const hit = GEO_CACHE.get(ip);
+  if (hit && hit.ttlAt > now) return { cc: hit.cc, country: hit.country };
+
+  // 内网直接跳过，返回本地标识
+  if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|0\.|169\.254\.|::1|fe80:|fc|fd)/.test(ip)) {
+    GEO_CACHE.set(ip, { cc: 'ZZ', country: 'Local', ttlAt: now + GEO_TTL_MS });
+    return { cc: 'ZZ', country: 'Local' };
+  }
+
+  // 源 1：ip-api.com（HTTP，IPv4 精准）
+  const isV6 = /:/.test(ip);
+  if (!isV6) {
+    try {
+      const r = await new Promise((resolve, reject) => {
+        const u = new URL(`http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,message,countryCode,country`);
+        http.get({ hostname: u.hostname, port: 80, path: u.pathname + u.search, timeout: 8000 }, (res) => {
+          const chunks = [];
+          res.on('data', c => chunks.push(c));
+          res.on('end', () => {
+            try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); } catch { reject(new Error('parse')); }
+          });
+        }).on('timeout', function () { this.destroy(new Error('timeout')); }).on('error', reject);
+      });
+      if (r?.status === 'success' && r.countryCode) {
+        GEO_CACHE.set(ip, { cc: r.countryCode.toUpperCase(), country: r.country || '', ttlAt: now + GEO_TTL_MS });
+        return { cc: r.countryCode.toUpperCase(), country: r.country || '' };
+      }
+    } catch { /* 走兜底 */ }
+  }
+
+  // 源 2：ipwho.is（HTTPS，支持 v4/v6）
+  try {
+    const u = new URL(`https://ipwho.is/${encodeURIComponent(ip)}`);
+    const r = await new Promise((resolve, reject) => {
+      https.get({ hostname: u.hostname, port: 443, path: u.pathname + u.search, timeout: 8000, headers: { 'User-Agent': 'nebula-nav' } }, (res) => {
+        const chunks = [];
+        res.on('data', c => chunks.push(c));
+        res.on('end', () => {
+          try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); } catch { reject(new Error('parse')); }
+        });
+      }).on('timeout', function () { this.destroy(new Error('timeout')); }).on('error', reject);
+    });
+    if (r?.success && r.country_code) {
+      GEO_CACHE.set(ip, { cc: r.country_code.toUpperCase(), country: r.country || '', ttlAt: now + GEO_TTL_MS });
+      return { cc: r.country_code.toUpperCase(), country: r.country || '' };
+    }
+  } catch { /* 走兜底 */ }
+
+  // 最终兜底：标记为查不到，短 TTL 避免反复查
+  GEO_CACHE.set(ip, { cc: 'XX', country: '', ttlAt: now + 10 * 60 * 1000 });
+  return { cc: 'XX', country: '' };
+}
+
+/* -------- 访问 IP -------- */
+function getClientIp(req) {
+  const xff = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
+  if (xff) return xff.replace('::ffff:', '');
+  const xri = (req.headers['x-real-ip'] || '').toString().trim();
+  if (xri) return xri.replace('::ffff:', '');
+  const ra = req.socket?.remoteAddress || '';
+  return ra.replace('::ffff:', '');
+}
+
+/* -------- 自动同步定时器 -------- */
+let githubSyncTimer = null;
+const GITHUB_SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 分钟
+let githubManualSyncing = false;
+async function runGithubSync(manual = false) {
+  const cfg = githubConfig();
+  if (!cfg || !cfg.enabled) return null;
+  if (manual) githubManualSyncing = true;
+  try {
+    const r = await githubPush(cfg);
+    db.settings.github = { ...(db.settings.github || {}), lastSyncAt: Date.now(), lastSyncMsg: r.skipped ? '内容未变化' : '已同步' };
+    await saveDb();
+    return { ok: true, ...r };
+  } catch (e) {
+    db.settings.github = { ...(db.settings.github || {}), lastSyncAt: Date.now(), lastSyncMsg: `失败: ${e.message}` };
+    await saveDb();
+    log('GitHub 同步失败:', e.message);
+    return { ok: false, error: e.message };
+  } finally {
+    githubManualSyncing = false;
+  }
+}
+function startGithubAutoSync() {
+  if (githubSyncTimer) clearInterval(githubSyncTimer);
+  githubSyncTimer = setInterval(() => runGithubSync(), GITHUB_SYNC_INTERVAL_MS);
 }
 
 /* -------------------------------------------------------------------- HTTP 层 */
@@ -1070,6 +1309,102 @@ async function handle(req, res) {
     return sendJson(res, 200, { ok: true });
   }
 
+  if (pathname === '/api/me' && method === 'GET') {
+    const session = requireRole(req, res, ['front', 'admin']);
+    if (!session) return;
+    const raw = getClientIp(req);
+    const ipV4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(raw) ? raw : null;
+    const ipV6 = /:/.test(raw) ? raw : null;
+    const geo = await geoLookup(ipV4 || ipV6);
+    return sendJson(res, 200, {
+      ip: raw,
+      ipv4: ipV4,
+      ipv6: ipV6,
+      host: (req.headers.host || '').split(':')[0] || '',
+      ua: clip((req.headers['user-agent'] || '').toString(), 200),
+      geo: geo ? { cc: geo.cc, country: geo.country } : null
+    });
+  }
+
+  if (pathname === '/api/github/status' && method === 'GET') {
+    const session = requireRole(req, res, ['front', 'admin']);
+    if (!session) return;
+    const g = db.settings.github || {};
+    const last = g.lastSyncAt ? new Date(g.lastSyncAt).toISOString() : null;
+    return sendJson(res, 200, {
+      configured: !!(g.username && g.repo && g.tokenCipher),
+      enabled: g.enabled !== false,
+      syncing: githubManualSyncing,
+      lastSyncAt: last,
+      lastSyncMsg: g.lastSyncMsg || '',
+      username: clip(g.username, 64),
+      repo: clip(g.repo, 120)
+    });
+  }
+
+  if (pathname === '/api/github/save' && method === 'POST') {
+    const session = requireRole(req, res, ['admin']);
+    if (!session) return;
+    const body = await readJson(req);
+    const cur = db.settings.github || {};
+    const username = clip(body.username || '', 64);
+    const repo = clip(body.repo || '', 120);
+    const branch = clip(body.branch || '', 64) || 'main';
+    const enabled = body.enabled !== false;
+    let tokenCipher = cur.tokenCipher;
+    if (body.token === null || body.token === '') {
+      tokenCipher = ''; // 清空 token
+    } else if (body.token && typeof body.token === 'string') {
+      tokenCipher = githubEncrypt(body.token.trim());
+    }
+    db.settings.github = {
+      username, repo, branch, enabled,
+      tokenCipher,
+      lastSyncAt: cur.lastSyncAt || null,
+      lastSyncMsg: cur.lastSyncMsg || ''
+    };
+    db.updatedAt = new Date().toISOString();
+    await saveDb();
+    startGithubAutoSync();
+    return sendJson(res, 200, { ok: true, github: sanitizeGithubForAdmin() });
+  }
+
+  if (pathname === '/api/github/test' && method === 'POST') {
+    const session = requireRole(req, res, ['admin']);
+    if (!session) return;
+    const body = await readJson(req);
+    const username = clip(body.username || '', 64);
+    const repo = clip(body.repo || '', 120);
+    const branch = clip(body.branch || '', 64) || 'main';
+    const token = body.token ? String(body.token).trim() : (body.tokenCipher ? githubDecrypt(body.tokenCipher) : '');
+    if (!username || !repo || !token) {
+      return sendJson(res, 400, { ok: false, error: '请填写用户名、仓库和 Token' });
+    }
+    try {
+      const r = await githubTest({ username, repo, branch, token });
+      if (!r.ok) return sendJson(res, 200, r);
+      // 顺便试一下仓库和 branch 存不存在
+      const check = await ghFetch(`/repos/${username}/${repo}`, { token });
+      if (check.status !== 200) return sendJson(res, 200, { ok: false, error: `仓库 ${username}/${repo} 不存在或无权限（${check.status}）` });
+      return sendJson(res, 200, { ok: true, login: r.login, repo: `${username}/${repo}` });
+    } catch (e) {
+      return sendJson(res, 502, { ok: false, error: '连接 GitHub 失败: ' + e.message });
+    }
+  }
+
+  if (pathname === '/api/github/push' && method === 'POST') {
+    const session = requireRole(req, res, ['admin']);
+    if (!session) return;
+    const cfg = githubConfig();
+    if (!cfg) return sendJson(res, 400, { ok: false, error: 'GitHub 未完整配置' });
+    try {
+      const r = await runGithubSync(true);
+      return sendJson(res, 200, r || { ok: false, error: '未启用' });
+    } catch (e) {
+      return sendJson(res, 500, { ok: false, error: e.message });
+    }
+  }
+
   if (pathname.startsWith('/api/')) {
     return sendJson(res, 404, { error: 'not found' });
   }
@@ -1103,6 +1438,7 @@ function loadSecret() {
 
 loadDb();
 loadSecret();
+startGithubAutoSync();
 
 const server = http.createServer((req, res) => {
   handle(req, res).catch((err) => {

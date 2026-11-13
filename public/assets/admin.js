@@ -218,6 +218,7 @@
     $('setDeviceName').value = state.settings.deviceName || '';
     $('setDefaultEngine').value = state.settings.defaultEngine || 'local';
     initEngines();
+    initGithub();
     applyTheme(state.settings.theme);
   }
 
@@ -322,6 +323,120 @@
     readSettings();
     markDirty();
   });
+
+  /* ------------------------------------------------------ GitHub 同步 */
+
+  function initGithub() {
+    const g = state.settings.github || {};
+    $('ghUsername').value = g.username || '';
+    $('ghRepo').value = g.repo || '';
+    $('ghBranch').value = g.branch || 'main';
+    $('ghToken').value = ''; // 不回显真实 token
+    $('ghToken').placeholder = g.tokenSet ? `已保存，末尾：${g.tokenTail}（留空不修改）` : '留空表示不修改已保存的 Token';
+    $('ghEnabled').checked = g.enabled !== false;
+    renderGhStatus(g);
+
+    $('ghTest').addEventListener('click', async () => {
+      const msg = $('ghMsg'); msg.textContent = '测试中...'; msg.style.color = '';
+      try {
+        const r = await api('/api/github/test', {
+          method: 'POST',
+          body: JSON.stringify({
+            username: $('ghUsername').value.trim(),
+            repo: $('ghRepo').value.trim(),
+            branch: $('ghBranch').value.trim(),
+            token: $('ghToken').value.trim() || undefined,
+            tokenCipher: g.tokenCipher || undefined
+          })
+        });
+        msg.textContent = r.ok ? `连接成功 ✓ 登录 ${r.login}，仓库 ${r.repo}` : `测试失败：${r.error}`;
+        msg.style.color = r.ok ? 'var(--link)' : '#c04848';
+      } catch (e) { msg.textContent = '网络错误: ' + e.message; msg.style.color = '#c04848'; }
+    });
+
+    $('ghSave').addEventListener('click', async () => {
+      const payload = {
+        username: $('ghUsername').value.trim(),
+        repo: $('ghRepo').value.trim(),
+        branch: $('ghBranch').value.trim() || 'main',
+        enabled: $('ghEnabled').checked
+      };
+      const tokenVal = $('ghToken').value.trim();
+      if (tokenVal) payload.token = tokenVal;
+      // 留空 → 不修改；要清空单独走 Clear
+      try {
+        const r = await api('/api/github/save', { method: 'POST', body: JSON.stringify(payload) });
+        if (r.ok) {
+          state.settings.github = r.github;
+          renderGhStatus(r.github);
+          toast('GitHub 配置已保存');
+          $('ghToken').value = '';
+          $('ghToken').placeholder = r.github.tokenSet ? `已保存，末尾：${r.github.tokenTail}（留空不修改）` : '留空表示不修改已保存的 Token';
+        } else {
+          toast(r.error || '保存失败', true);
+        }
+      } catch (e) { toast('网络错误', true); }
+    });
+
+    $('ghPushNow').addEventListener('click', async () => {
+      const msg = $('ghMsg'); msg.textContent = '正在推送...'; msg.style.color = '';
+      try {
+        const r = await api('/api/github/push', { method: 'POST' });
+        if (r.ok) {
+          msg.textContent = r.skipped ? `无需推送：${r.message}` : '已推送 ✓';
+          msg.style.color = 'var(--link)';
+          // 刷新状态
+          const admin = await api('/api/admin/data');
+          if (admin.settings?.github) { state.settings.github = admin.settings.github; renderGhStatus(admin.settings.github); }
+        } else {
+          msg.textContent = '推送失败：' + r.error; msg.style.color = '#c04848';
+        }
+      } catch (e) { msg.textContent = '网络错误: ' + e.message; msg.style.color = '#c04848'; }
+    });
+
+    $('ghClearToken').addEventListener('click', async () => {
+      if (!confirm('确定清空已保存的 GitHub Token？')) return;
+      try {
+        const r = await api('/api/github/save', {
+          method: 'POST',
+          body: JSON.stringify({ username: $('ghUsername').value.trim(), repo: $('ghRepo').value.trim(), branch: $('ghBranch').value.trim() || 'main', token: null })
+        });
+        if (r.ok) {
+          state.settings.github = r.github;
+          renderGhStatus(r.github);
+          toast('Token 已清除');
+          $('ghToken').placeholder = '留空表示不修改已保存的 Token';
+        }
+      } catch (e) { toast('网络错误', true); }
+    });
+  }
+
+  function renderGhStatus(g) {
+    const chip = $('ghStateChip');
+    const detail = $('ghStatusDetail');
+    if (!g.username || !g.repo || !g.tokenSet) {
+      chip.textContent = '未配置';
+      chip.className = 'gh-chip gh-off';
+      detail.textContent = '填写用户名、仓库、Token 并保存后生效';
+      return;
+    }
+    if (g.enabled === false) {
+      chip.textContent = '已禁用';
+      chip.className = 'gh-chip gh-off';
+      detail.textContent = `已配置 ${g.username}/${g.repo}，但自动同步已关闭`;
+      return;
+    }
+    if (g.lastSyncAt) {
+      const d = new Date(g.lastSyncAt);
+      chip.textContent = g.lastSyncMsg?.startsWith('失败') ? '同步失败' : '正常';
+      chip.className = g.lastSyncMsg?.startsWith('失败') ? 'gh-chip gh-err' : 'gh-chip gh-ok';
+      detail.textContent = `上次同步 ${d.toLocaleString()} · ${g.lastSyncMsg || ''}`;
+    } else {
+      chip.textContent = '等待首次同步';
+      chip.className = 'gh-chip gh-pending';
+      detail.textContent = `已配置 ${g.username}/${g.repo}，点「立即同步一次」手动触发`;
+    }
+  }
 
   // 换主题立即预览，点「保存修改」后写回服务器
   $('setTheme').addEventListener('input', () => {

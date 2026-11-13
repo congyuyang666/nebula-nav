@@ -41,7 +41,9 @@
     monitorMem: document.getElementById('monitorMem'),
     monitorMemBar: document.getElementById('monitorMemBar'),
     monitorMemVal: document.getElementById('monitorMemVal'),
-    monitorFoot: document.getElementById('monitorFoot')
+    monitorFoot: document.getElementById('monitorFoot'),
+    monitorIp: document.getElementById('monitorIp'),
+    syncBadge: document.getElementById('syncBadge')
   };
 
   /* 内置短句，避免请求外部接口（CSP 只允许本站脚本与请求） */
@@ -267,6 +269,88 @@
       const data = await api('/api/system');
       if (seq === monitorSeq) renderMonitor(data);
     } catch { /* 网络错误就默默跳过，等下次 */ }
+    // 每一轮监控刷新也顺带更新同步状态（省一个定时器）
+    fetchGhStatus();
+  }
+
+  async function fetchMeOnce() {
+    try {
+      const me = await api('/api/me');
+      if (!me?.ip) return;
+      if (els.monitorIp) {
+        const cc = me.geo?.cc;
+        const flag = flagImg(cc);
+        const isV6 = !!me.ipv6;
+        const mainIp = isV6 ? (compactV6(me.ipv6) || me.ipv6) : (me.ipv4 || me.ip);
+        const mainClass = 'ip-main' + (isV6 ? ' ip-v6' : '');
+        const title = '来访 IP: ' + me.ip + (me.geo?.country ? ' (' + me.geo.country + ')' : (cc === 'ZZ' ? ' (Local)' : ''));
+        els.monitorIp.innerHTML =
+          '<span class="ip-flag' + (cc === 'ZZ' ? ' ip-local' : '') + '" title="' + title + '">' + flag + '</span>' +
+          '<span class="' + mainClass + '" title="' + title + '">' + mainIp + '</span>';
+      }
+    } catch { /* 未登录或网络错误就不显示 */ }
+  }
+
+  function flagImg(cc) {
+    if (!cc) return '';
+    if (cc === 'ZZ') return '🖥️';
+    if (cc === 'XX') return '🌐';
+    const lower = cc.toLowerCase();
+    // flagcdn: Cloudflare CDN，免费、稳定、40px 足够清晰
+    return '<img class="ip-flag-img" src="https://flagcdn.com/w40/' + lower + '.png" alt="' + cc + '" onerror="this.replaceWith(document.createTextNode(\'' + flagEmoji(cc) + '\'))" referrerpolicy="no-referrer" loading="lazy">';
+  }
+  function flagEmoji(cc) {
+    if (!cc) return '🖥️';
+    if (cc === 'ZZ') return '🖥️';
+    if (cc === 'XX') return '🌐';
+    return String.fromCodePoint(...cc.toUpperCase().split('').map(function (c) { return 127397 + c.charCodeAt(0); }));
+  }
+
+  function compactV6(ip) {
+    if (!ip || !/:/.test(ip)) return ip || '';
+    // 去掉每段前导零，保留至少一个
+    let s = ip.split(':').map(function (p) { return p.replace(/^0+/, '') || '0'; }).join(':');
+    // 最长连续的 :0:0:... 换成 ::
+    const m = s.match(/:(?:0:)+0/g);
+    if (m) {
+      let longest = m[0]; m.forEach(function (x) { if (x.length > longest.length) longest = x; });
+      s = s.replace(longest, '::');
+    }
+    if (s.length > 30) s = s.slice(0, 27) + '…';
+    return s;
+  }
+
+  async function fetchGhStatus() {
+    try {
+      const s = await api('/api/github/status');
+      if (!els.syncBadge) return;
+      if (!s.configured || s.enabled === false) {
+        els.syncBadge.hidden = true;
+        return;
+      }
+      els.syncBadge.hidden = false;
+      const t = s.lastSyncAt ? new Date(s.lastSyncAt) : null;
+      const ago = t ? timeAgo(t) : '还没同步过';
+      let state, label, tip;
+      if (s.syncing) {
+        state = 'syncing'; label = 'GitHub 同步中'; tip = '正在同步...';
+      } else if ((s.lastSyncMsg || '').startsWith('失败')) {
+        state = 'err'; label = 'GitHub 同步失败'; tip = s.lastSyncMsg || '';
+      } else {
+        state = 'ok'; label = 'GitHub 已同步'; tip = ago;
+      }
+      els.syncBadge.className = 'sync-badge sync-' + state;
+      els.syncBadge.innerHTML = '<span class="sync-dot"></span><span class="sync-label">' + label + '</span>';
+      els.syncBadge.title = tip;
+      els.syncBadge.setAttribute('aria-label', tip);
+    } catch { /* 静默失败 */ }
+  }
+  function timeAgo(d) {
+    const s = Math.max(1, Math.floor((Date.now() - d.getTime()) / 1000));
+    if (s < 60) return s + '秒前';
+    if (s < 3600) return Math.floor(s / 60) + '分钟前';
+    if (s < 86400) return Math.floor(s / 3600) + '小时前';
+    return Math.floor(s / 86400) + '天前';
   }
 
   function startMonitor(settings) {
@@ -794,6 +878,8 @@
     startClock(config.settings);
     renderEngines(config.settings);
     startMonitor(config.settings);
+    fetchMeOnce();
+    fetchGhStatus();
     applyDensity();
     syncModeButtons();
     renderFilterBar();
