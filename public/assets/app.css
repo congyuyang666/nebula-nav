@@ -57,25 +57,6 @@
   --mask-bg: rgba(3, 6, 11, 0.72);
 }
 
-/* ------------------------------------------------------------ 字体预设 */
-body[data-font="rounded"] {
-  --font: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Noto Sans SC",
-    system-ui, -apple-system, sans-serif;
-}
-body[data-font="hei"] {
-  --font: "Microsoft YaHei", "PingFang SC", "Source Han Sans SC", "Noto Sans SC",
-    sans-serif;
-}
-body[data-font="song"] {
-  --font: "Songti SC", "Source Han Serif SC", "Noto Serif SC", SimSun, serif;
-}
-body[data-font="kai"] {
-  --font: "Kaiti SC", "STKaiti", KaiTi, "Noto Serif SC", serif;
-}
-body[data-font="mono"] {
-  --font: var(--mono);
-}
-
 /* ------------------------------------------------------------ 访客 IP */
 .visitor-ip {
   display: inline-flex;

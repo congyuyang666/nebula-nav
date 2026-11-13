@@ -155,15 +155,6 @@
   let clockTimer = 0;
   const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
-  /* ------------------------------------------------------- 字体 */
-
-  const FONT_KEYS = ['system', 'rounded', 'hei', 'song', 'kai', 'mono'];
-
-  function applyFont(settings) {
-    const f = settings && FONT_KEYS.includes(settings.fontFamily) ? settings.fontFamily : 'system';
-    document.body.dataset.font = f;
-  }
-
   /* ------------------------------------------------------- 访客 IP 与国旗 */
 
   function compactV6(ip) {

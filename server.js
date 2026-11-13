@@ -19,7 +19,6 @@ const { spawn } = require('node:child_process');
 const ROOT = __dirname;
 const VERSION = require('./package.json').version;
 const THEMES = ['nebula', 'ocean', 'forest', 'dusk', 'sunset', 'graphite', 'dawn', 'paper'];
-const FONTS = ['system', 'rounded', 'hei', 'song', 'kai', 'mono'];
 const START_AT = new Date().toISOString();
 const CARD_STYLES = ['default', 'emboss', 'inset', 'glass', 'neon', 'gradient', 'float3d', 'minimal', 'shadow'];
 const FONTS = ['default', 'system', 'jetbrains', 'inter', 'roboto', 'noto', 'sourcehan', 'pingfang', 'custom'];
@@ -446,7 +445,6 @@ function publicSettings() {
     customFont: clip(db.settings.customFont, 200),
     ghRepo: clip(db.settings.ghRepo, 200),
     icp: clip(db.settings.icp, 80),
-    fontFamily: FONTS.includes(db.settings.fontFamily) ? db.settings.fontFamily : 'system',
     showVisitorIp: db.settings.showVisitorIp !== false,
     showVisitorFlag: db.settings.showVisitorFlag !== false,
     showDeployInfo: db.settings.showDeployInfo !== false,
@@ -1285,7 +1283,6 @@ async function handle(req, res) {
     db.settings.cardStyle = CARD_STYLES.includes(s.cardStyle) ? s.cardStyle : 'default';
     db.settings.ghRepo = clip(s.ghRepo, 200);
     db.settings.icp = clip(s.icp, 80);
-    db.settings.fontFamily = FONTS.includes(s.fontFamily) ? s.fontFamily : 'system';
     db.settings.showVisitorIp = s.showVisitorIp !== false;
     db.settings.showVisitorFlag = s.showVisitorFlag !== false;
     db.settings.showDeployInfo = s.showDeployInfo !== false;

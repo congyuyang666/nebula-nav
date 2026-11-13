@@ -228,7 +228,6 @@
     initEngines();
     initGithub();
     applyTheme(state.settings.theme);
-    applyAdminFont();
   }
 
   function readSettings() {
