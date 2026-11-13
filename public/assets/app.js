@@ -31,6 +31,7 @@
     greetingText: document.getElementById('greetingText'),
     quoteText: document.getElementById('quoteText'),
     footerLeft: document.getElementById('footerLeft'),
+    footerCenter: document.getElementById('footerCenter'),
     footerRight: document.getElementById('footerRight'),
     monitor: document.getElementById('monitor'),
     monitorGrid: document.getElementById('monitorGrid'),
@@ -325,6 +326,13 @@
     }
     const scheme = document.querySelector('meta[name="color-scheme"]');
     if (scheme) scheme.content = (active === 'dawn' || active === 'paper') ? 'light' : 'dark';
+  }
+
+  function applyCardStyle(style) {
+    const allowed = ['default','emboss','inset','glass','neon','gradient','float3d','minimal','shadow'];
+    const active = allowed.includes(style) ? style : 'default';
+    for (const s of allowed) document.body.classList.remove('card-style-' + s);
+    if (active !== 'default') document.body.classList.add('card-style-' + active);
   }
 
   /* 前台主题偏好：只存在当前浏览器，优先于后台的站点默认主题 */
@@ -811,16 +819,44 @@
     state.categories = config.categories;
     state.items = config.items;
     applyTheme(effectiveTheme(config.settings.theme));
+    applyCardStyle(config.settings.cardStyle);
     syncThemeSelect();
 
     els.brandName.textContent = config.settings.siteTitle || 'Nebula Nav';
     els.brandSub.textContent = config.settings.siteSubtitle || '';
     els.gateTitle.textContent = config.settings.siteTitle || 'Nebula Nav';
     document.title = `${config.settings.siteTitle || 'Nebula Nav'} · 导航`;
+
+    // 页脚：左区（部署/版权信息）+ 中区（GitHub/ICP 链接）+ 右区（更新时间/版本）
+    const version = config.settings.version ? `v${config.settings.version}` : '';
     els.footerLeft.textContent = config.settings.footerNote || config.settings.siteTitle || 'Nebula Nav';
+    els.footerCenter.innerHTML = '';
+    if (config.settings.ghRepo) {
+      const a = document.createElement('a');
+      a.href = config.settings.ghRepo;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = 'GitHub';
+      const gh = document.createElement('span');
+      gh.textContent = ' · ';
+      gh.appendChild(a);
+      els.footerCenter.appendChild(a);
+    }
+    if (config.settings.icp) {
+      if (els.footerCenter.children.length) {
+        const sep = document.createTextNode(' · ');
+        els.footerCenter.appendChild(sep);
+      }
+      const a = document.createElement('a');
+      a.href = 'https://beian.miit.gov.cn/';
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = config.settings.icp;
+      els.footerCenter.appendChild(a);
+    }
     els.footerRight.textContent = [
       config.updatedAt ? `数据更新于 ${new Date(config.updatedAt).toLocaleString('zh-CN')}` : '',
-      config.settings.version ? `v${config.settings.version}` : ''
+      version
     ].filter(Boolean).join(' · ');
 
     const savedMode = readJSON('aurora.mode', null);
