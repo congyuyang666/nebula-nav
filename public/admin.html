@@ -7,7 +7,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090d16'/%3E%3Cpath d='M7 22c3.6-6.4 7-10 12-12.6' stroke='%234be1c0' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M7 26c4.2-6 8.4-9.6 15-13' stroke='%238b7bff' stroke-width='2.4' fill='none' stroke-linecap='round' opacity='.85'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/app.css?v=1.4.0">
+<link rel="stylesheet" href="assets/app.css?v=1.4.1">
 </head>
 <body class="admin-body">
 <div class="aurora" aria-hidden="true"></div>
@@ -60,7 +60,7 @@
       </div>
       <div class="brand-text">
         <span class="brand-name">Nebula Nav</span>
-        <span class="brand-sub">后台管理 · <span id="adminVersion">v1.4.0</span></span>
+        <span class="brand-sub">后台管理 · <span id="adminVersion">v1.4.1</span></span>
       </div>
     </div>
 
@@ -167,6 +167,24 @@
             </select>
           </div>
           <div class="form-row">
+            <label for="setFont">界面字体</label>
+            <select class="input-sm" id="setFont">
+              <option value="default">默认（跟随主题）</option>
+              <option value="system">系统默认</option>
+              <option value="jetbrains">JetBrains Mono</option>
+              <option value="inter">Inter</option>
+              <option value="roboto">Roboto</option>
+              <option value="noto">Noto Sans SC</option>
+              <option value="sourcehan">思源黑体</option>
+              <option value="pingfang">苹方 / 微软雅黑</option>
+              <option value="custom">自定义字体</option>
+            </select>
+          </div>
+          <div class="form-row full">
+            <label for="setCustomFont">自定义字体名称（选「自定义字体」时生效）</label>
+            <input class="input-sm" id="setCustomFont" maxlength="200" placeholder='"PingFang SC", "Microsoft YaHei", sans-serif'>
+          </div>
+          <div class="form-row">
             <label>前台显示</label>
             <label class="check-row">
               <input type="checkbox" id="setShowMode">
@@ -189,6 +207,14 @@
                 显示时钟
               </label>
               <label class="check-row">
+                <input type="checkbox" id="setShowVisitorIp">
+                显示访客 IP
+              </label>
+              <label class="check-row">
+                <input type="checkbox" id="setShowVisitorFlag">
+                显示访客国家国旗
+              </label>
+              <label class="check-row">
                 <input type="checkbox" id="setShowQuote">
                 显示随机一言
               </label>
@@ -204,6 +230,15 @@
               <label class="check-row">
                 <input type="checkbox" id="setShowMonitor">
                 首页显示 CPU / 内存 / 存储监控面板
+              </label>
+            </div>
+          </div>
+          <div class="form-row full">
+            <label>页脚信息</label>
+            <div class="check-list">
+              <label class="check-row">
+                <input type="checkbox" id="setShowDeployInfo">
+                页脚显示部署时间（服务启动时间）
               </label>
             </div>
           </div>
@@ -596,6 +631,6 @@
 <p class="toast" id="toast" role="status" aria-live="polite"></p>
 
 <script src="assets/taxonomy.js?v=1.2.1" defer></script>
-<script src="assets/admin.js?v=1.4.0" defer></script>
+<script src="assets/admin.js?v=1.4.1" defer></script>
 </body>
 </html>
