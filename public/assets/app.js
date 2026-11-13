@@ -178,6 +178,14 @@
     return img;
   }
 
+  function isPrivateIp(ip) {
+    if (!ip) return false;
+    if (/^10\./.test(ip) || /^192\.168\./.test(ip)) return true;
+    const m = /^172\.(\d{1,3})\./.exec(ip);
+    if (m) { const n = Number(m[1]); return n >= 16 && n <= 31; }
+    return /^(fc|fd|fe80)/i.test(ip);
+  }
+
   async function fetchMeOnce() {
     if (!els.visitorIp) return;
     const s = state.settings || {};
@@ -192,7 +200,14 @@
       els.visitorIp.textContent = '';
       if (s.showVisitorFlag !== false) {
         const img = flagImg(me.geo && me.geo.cc);
-        if (img) els.visitorIp.appendChild(img);
+        if (img) {
+          els.visitorIp.appendChild(img);
+        } else if (isPrivateIp(ipText)) {
+          const lan = document.createElement('span');
+          lan.className = 'visitor-flag visitor-flag-local';
+          lan.textContent = 'LAN';
+          els.visitorIp.appendChild(lan);
+        }
       }
       if (s.showVisitorIp !== false && ipText) {
         const span = document.createElement('span');

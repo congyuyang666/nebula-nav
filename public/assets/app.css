@@ -84,6 +84,22 @@
   border-radius: 3px;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
 }
+.visitor-flag-local {
+  display: inline-grid;
+  place-items: center;
+  width: auto;
+  min-width: 20px;
+  height: 13px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--aurora) 18%, transparent);
+  color: var(--aurora);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  box-shadow: none;
+}
 
 /* ------------------------------------------------------------ 主题预设 */
 html[data-theme="ocean"] {

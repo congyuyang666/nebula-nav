@@ -1281,6 +1281,8 @@ async function handle(req, res) {
     db.settings.searchEngines = sanitizeEngines(s.searchEngines);
     db.settings.theme = THEMES.includes(s.theme) ? s.theme : 'nebula';
     db.settings.cardStyle = CARD_STYLES.includes(s.cardStyle) ? s.cardStyle : 'default';
+    db.settings.font = FONTS.includes(s.font) ? s.font : 'default';
+    db.settings.customFont = clip(s.customFont, 200);
     db.settings.ghRepo = clip(s.ghRepo, 200);
     db.settings.icp = clip(s.icp, 80);
     db.settings.showVisitorIp = s.showVisitorIp !== false;
