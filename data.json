@@ -1,0 +1,368 @@
+{
+  "categories": [
+    {
+      "id": "media",
+      "name": "影音",
+      "color": "#7bd4ff",
+      "icon": "film"
+    },
+    {
+      "id": "nas",
+      "name": "网络与 NAS",
+      "color": "#4be1c0",
+      "icon": "drive"
+    },
+    {
+      "id": "dev",
+      "name": "开发",
+      "color": "#9b8cff",
+      "icon": "code"
+    },
+    {
+      "id": "ai",
+      "name": "AI 工具",
+      "color": "#ffb37a",
+      "icon": "spark"
+    },
+    {
+      "id": "info",
+      "name": "资讯阅读",
+      "color": "#c9d86b",
+      "icon": "book"
+    },
+    {
+      "id": "work",
+      "name": "效率办公",
+      "color": "#7fa9ff",
+      "icon": "flow"
+    },
+    {
+      "id": "misc",
+      "name": "其他",
+      "color": "#8fa0b8",
+      "icon": "grid"
+    }
+  ],
+  "items": [
+    {
+      "id": "dsm",
+      "title": "群晖 DSM",
+      "desc": "NAS 管理后台",
+      "urlLan": "https://192.168.31.177:5001",
+      "urlWan": "https://d.speedtest.462878248.xyz:16666/",
+      "category": "media",
+      "tags": [
+        "nas",
+        "synology"
+      ],
+      "icon": "/icons/a6ef5d1da9f669e4.png",
+      "pinned": true
+    },
+    {
+      "id": "emby",
+      "title": "Emby",
+      "desc": "家庭影院媒体库",
+      "urlLan": "http://192.168.31.177:8096",
+      "urlWan": "https://e.speedtest.462878248.xyz:16666",
+      "category": "media",
+      "tags": [
+        "media",
+        "stream"
+      ],
+      "icon": "/icons/405686ea4119e5e0.png",
+      "pinned": true
+    },
+    {
+      "id": "moviepilot",
+      "title": "MoviePilot",
+      "desc": "资源订阅与刮削",
+      "urlLan": "http://192.168.31.177:30001",
+      "urlWan": "https://mp.speedtest.462878248.xyz:16666",
+      "category": "media",
+      "tags": [
+        "media",
+        "docker"
+      ],
+      "icon": "/icons/a4218bfc811304ff.png",
+      "pinned": true
+    },
+    {
+      "id": "qbittorrent",
+      "title": "qBittorrent",
+      "desc": "下载器",
+      "urlLan": "http://192.168.31.177:8081",
+      "urlWan": "https://qb.speedtest.462878248.xyz:16666",
+      "category": "media",
+      "tags": [
+        "download"
+      ],
+      "icon": "/icons/b1d0153042ebcdf0.png",
+      "pinned": false
+    },
+    {
+      "id": "openlist",
+      "title": "OpenList",
+      "desc": "网盘聚合与挂载",
+      "urlLan": "http://192.168.1.10:5244",
+      "urlWan": "",
+      "category": "media",
+      "tags": [
+        "storage"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "homeassistant",
+      "title": "Home Assistant",
+      "desc": "智能家居控制台",
+      "urlLan": "http://192.168.31.229:8123/",
+      "urlWan": "https://ha.speedtest.462878248.xyz:16666",
+      "category": "nas",
+      "tags": [
+        "iot",
+        "home"
+      ],
+      "icon": "/icons/288503622dafb4d1.png",
+      "pinned": true
+    },
+    {
+      "id": "dockge",
+      "title": "Dockge",
+      "desc": "Compose 容器管理",
+      "urlLan": "http://192.168.1.10:5001",
+      "urlWan": "",
+      "category": "nas",
+      "tags": [
+        "docker"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "safeline",
+      "title": "雷池 WAF",
+      "desc": "Web 应用防火墙",
+      "urlLan": "https://192.168.1.10:9443",
+      "urlWan": "",
+      "category": "nas",
+      "tags": [
+        "security"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "istoreos",
+      "title": "iStoreOS",
+      "desc": "软路由后台",
+      "urlLan": "http://192.168.31.24",
+      "urlWan": "https://is.speedtest.462878248.xyz:16666",
+      "category": "nas",
+      "tags": [
+        "router"
+      ],
+      "icon": "/icons/835f9a94da2396f4.png",
+      "pinned": false
+    },
+    {
+      "id": "adguard",
+      "title": "AdGuard Home",
+      "desc": "DNS 与去广告",
+      "urlLan": "http://192.168.1.1:3000",
+      "urlWan": "",
+      "category": "nas",
+      "tags": [
+        "dns"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "vaultwarden",
+      "title": "Vaultwarden",
+      "desc": "自建密码库",
+      "urlLan": "http://192.168.1.10:8222",
+      "urlWan": "",
+      "category": "nas",
+      "tags": [
+        "password"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "qinglong",
+      "title": "青龙面板",
+      "desc": "定时任务与脚本",
+      "urlLan": "http://192.168.31.177:5700",
+      "urlWan": "https://ql.speedtest.462878248.xyz:16666",
+      "category": "dev",
+      "tags": [
+        "cron"
+      ],
+      "icon": "/icons/02c45ca7a4dd717c.png",
+      "pinned": false
+    },
+    {
+      "id": "github",
+      "title": "GitHub",
+      "desc": "代码托管与开源项目",
+      "urlLan": "https://github.com",
+      "urlWan": "https://github.com",
+      "category": "dev",
+      "tags": [
+        "code",
+        "git"
+      ],
+      "icon": "/icons/16a677095ba68b4a.jpg",
+      "pinned": true
+    },
+    {
+      "id": "mdn",
+      "title": "MDN",
+      "desc": "Web 开发文档",
+      "urlLan": "https://developer.mozilla.org",
+      "urlWan": "https://developer.mozilla.org",
+      "category": "dev",
+      "tags": [
+        "docs"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "cloudflare",
+      "title": "Cloudflare",
+      "desc": "DNS 与隧道控制台",
+      "urlLan": "https://dash.cloudflare.com",
+      "urlWan": "https://dash.cloudflare.com",
+      "category": "nas",
+      "tags": [
+        "dns",
+        "tunnel"
+      ],
+      "icon": "/icons/a76314ef3768b484.png",
+      "pinned": false
+    },
+    {
+      "id": "claude",
+      "title": "Claude",
+      "desc": "长文本对话与写作",
+      "urlLan": "https://claude.ai",
+      "urlWan": "https://claude.ai",
+      "category": "ai",
+      "tags": [
+        "ai"
+      ],
+      "icon": "",
+      "pinned": true
+    },
+    {
+      "id": "huggingface",
+      "title": "Hugging Face",
+      "desc": "模型与数据集",
+      "urlLan": "https://huggingface.co",
+      "urlWan": "https://huggingface.co",
+      "category": "ai",
+      "tags": [
+        "ai",
+        "model"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "bilibili",
+      "title": "哔哩哔哩",
+      "desc": "番剧与数码内容",
+      "urlLan": "https://www.bilibili.com",
+      "urlWan": "https://www.bilibili.com",
+      "category": "media",
+      "tags": [
+        "video"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "youtube",
+      "title": "YouTube",
+      "desc": "订阅与长时间视频",
+      "urlLan": "https://www.youtube.com",
+      "urlWan": "https://www.youtube.com",
+      "category": "media",
+      "tags": [
+        "video"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "v2ex",
+      "title": "V2EX",
+      "desc": "技术与生活社区",
+      "urlLan": "https://www.v2ex.com",
+      "urlWan": "https://www.v2ex.com",
+      "category": "info",
+      "tags": [
+        "community"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "sspai",
+      "title": "少数派",
+      "desc": "效率与工具文章",
+      "urlLan": "https://sspai.com",
+      "urlWan": "https://sspai.com",
+      "category": "info",
+      "tags": [
+        "reading"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "smzdm",
+      "title": "什么值得买",
+      "desc": "硬件与好价",
+      "urlLan": "https://www.smzdm.com",
+      "urlWan": "https://www.smzdm.com",
+      "category": "info",
+      "tags": [
+        "shopping"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "feishu",
+      "title": "飞书",
+      "desc": "文档、表格与消息",
+      "urlLan": "https://www.feishu.cn",
+      "urlWan": "https://www.feishu.cn",
+      "category": "work",
+      "tags": [
+        "office"
+      ],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "notion",
+      "title": "Notion",
+      "desc": "项目与知识库",
+      "urlLan": "https://www.notion.so",
+      "urlWan": "https://www.notion.so",
+      "category": "work",
+      "tags": [
+        "notes"
+      ],
+      "icon": "",
+      "pinned": false
+    }
+  ],
+  "updatedAt": "2026-11-13T03:30:11.794Z"
+}
