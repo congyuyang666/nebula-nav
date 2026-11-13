@@ -27,6 +27,7 @@
     brandName: document.getElementById('brandName'),
     brandSub: document.getElementById('brandSub'),
     clock: document.getElementById('clock'),
+    visitorIp: document.getElementById('visitorIp'),
     welcome: document.getElementById('welcome'),
     greetingText: document.getElementById('greetingText'),
     quoteText: document.getElementById('quoteText'),
@@ -153,6 +154,67 @@
 
   let clockTimer = 0;
   const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+  /* ------------------------------------------------------- 字体 */
+
+  const FONT_KEYS = ['system', 'rounded', 'hei', 'song', 'kai', 'mono'];
+
+  function applyFont(settings) {
+    const f = settings && FONT_KEYS.includes(settings.fontFamily) ? settings.fontFamily : 'system';
+    document.body.dataset.font = f;
+  }
+
+  /* ------------------------------------------------------- 访客 IP 与国旗 */
+
+  function compactV6(ip) {
+    if (!ip) return '';
+    if (ip.length <= 24) return ip;
+    const parts = ip.split(':').filter(Boolean);
+    if (parts.length > 4) return parts.slice(0, 2).join(':') + ':…:' + parts.slice(-2).join(':');
+    return ip;
+  }
+
+  function flagImg(cc) {
+    if (!cc || !/^[a-zA-Z]{2}$/.test(cc)) return null;
+    const code = cc.toLowerCase();
+    if (code === 'zz' || code === 'xx') return null;
+    const img = document.createElement('img');
+    img.className = 'visitor-flag';
+    img.src = 'https://flagcdn.com/w40/' + code + '.png';
+    img.alt = '';
+    img.loading = 'lazy';
+    img.referrerPolicy = 'no-referrer';
+    return img;
+  }
+
+  async function fetchMeOnce() {
+    if (!els.visitorIp) return;
+    const s = state.settings || {};
+    if (s.showVisitorIp === false && s.showVisitorFlag === false) {
+      els.visitorIp.hidden = true;
+      return;
+    }
+    try {
+      const me = await api('/api/me');
+      const ipText = me.ipv4 || (me.ipv6 ? compactV6(me.ipv6) : '') || me.ip || '';
+      const country = me.geo && me.geo.country ? String(me.geo.country) : '';
+      els.visitorIp.textContent = '';
+      if (s.showVisitorFlag !== false) {
+        const img = flagImg(me.geo && me.geo.cc);
+        if (img) els.visitorIp.appendChild(img);
+      }
+      if (s.showVisitorIp !== false && ipText) {
+        const span = document.createElement('span');
+        span.className = 'visitor-ip-text';
+        span.textContent = ipText;
+        els.visitorIp.appendChild(span);
+      }
+      els.visitorIp.title = country ? (ipText ? country + ' · ' + ipText : country) : ipText;
+      els.visitorIp.hidden = els.visitorIp.childNodes.length === 0;
+    } catch (e) {
+      els.visitorIp.hidden = true;
+    }
+  }
 
   function startClock(settings) {
     if (!els.clock) return;
@@ -333,6 +395,18 @@
     const active = allowed.includes(style) ? style : 'default';
     for (const s of allowed) document.body.classList.remove('card-style-' + s);
     if (active !== 'default') document.body.classList.add('card-style-' + active);
+  }
+
+  function applyFont(font, customFont) {
+    const allowed = ['default','system','jetbrains','inter','roboto','noto','sourcehan','pingfang','custom'];
+    const active = allowed.includes(font) ? font : 'default';
+    for (const f of allowed) document.body.classList.remove('font-' + f);
+    if (active !== 'default') document.body.classList.add('font-' + active);
+    if (active === 'custom' && customFont) {
+      document.documentElement.style.setProperty('--custom-font', customFont);
+    } else {
+      document.documentElement.style.removeProperty('--custom-font');
+    }
   }
 
   /* 前台主题偏好：只存在当前浏览器，优先于后台的站点默认主题 */
@@ -820,6 +894,7 @@
     state.items = config.items;
     applyTheme(effectiveTheme(config.settings.theme));
     applyCardStyle(config.settings.cardStyle);
+    applyFont(config.settings.font, config.settings.customFont);
     syncThemeSelect();
 
     els.brandName.textContent = config.settings.siteTitle || 'Nebula Nav';
@@ -854,9 +929,13 @@
       a.textContent = config.settings.icp;
       els.footerCenter.appendChild(a);
     }
+    const deployPart = (config.settings.showDeployInfo !== false && config.settings.startedAt)
+      ? `部署于 ${new Date(config.settings.startedAt).toLocaleString('zh-CN')}`
+      : '';
     els.footerRight.textContent = [
       config.updatedAt ? `数据更新于 ${new Date(config.updatedAt).toLocaleString('zh-CN')}` : '',
-      version
+      version,
+      deployPart
     ].filter(Boolean).join(' · ');
 
     const savedMode = readJSON('aurora.mode', null);
@@ -864,6 +943,7 @@
     els.modeSwitch.hidden = config.settings.showModeSwitch === false;
     renderWelcome(config.settings);
     startClock(config.settings);
+    fetchMeOnce();
     renderEngines(config.settings);
     startMonitor(config.settings);
     fetchGhStatus();
