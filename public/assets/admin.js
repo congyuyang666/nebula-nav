@@ -205,8 +205,11 @@
     $('setTitle').value = state.settings.siteTitle || '';
     $('setSubtitle').value = state.settings.siteSubtitle || '';
     $('setFooter').value = state.settings.footerNote || '';
+    $('setGhRepo').value = state.settings.ghRepo || '';
+    $('setIcp').value = state.settings.icp || '';
     $('setMode').value = state.settings.defaultMode || 'lan';
     $('setTheme').value = state.settings.theme || 'nebula';
+    $('setCardStyle').value = state.settings.cardStyle || 'default';
     $('setShowMode').checked = state.settings.showModeSwitch !== false;
     $('setShowRecent').checked = state.settings.showRecent !== false;
     $('setShowPinned').checked = state.settings.showPinned !== false;
@@ -227,8 +230,11 @@
       siteTitle: $('setTitle').value.trim() || 'Nebula Nav',
       siteSubtitle: $('setSubtitle').value.trim(),
       footerNote: $('setFooter').value.trim(),
+      ghRepo: $('setGhRepo').value.trim(),
+      icp: $('setIcp').value.trim(),
       defaultMode: $('setMode').value,
       theme: $('setTheme').value,
+      cardStyle: $('setCardStyle').value,
       showModeSwitch: $('setShowMode').checked,
       showRecent: $('setShowRecent').checked,
       showPinned: $('setShowPinned').checked,
@@ -442,6 +448,12 @@
   $('setTheme').addEventListener('input', () => {
     readSettings();
     applyTheme(state.settings.theme);
+    markDirty();
+  });
+  // 换卡片效果立即预览
+  $('setCardStyle').addEventListener('input', () => {
+    readSettings();
+    applyCardStyle(state.settings.cardStyle);
     markDirty();
   });
 
@@ -1100,8 +1112,11 @@
           siteTitle: String(data.settings.siteTitle || 'Nebula Nav').slice(0, 24),
           siteSubtitle: String(data.settings.siteSubtitle || '').slice(0, 60),
           footerNote: String(data.settings.footerNote || '').slice(0, 120),
+          ghRepo: String(data.settings.ghRepo || '').slice(0, 200),
+          icp: String(data.settings.icp || '').slice(0, 80),
           defaultMode: ['auto', 'lan', 'wan'].includes(data.settings.defaultMode) ? data.settings.defaultMode : 'lan',
           theme: themes.includes(data.settings.theme) ? data.settings.theme : 'nebula',
+          cardStyle: ['default','emboss','inset','glass','neon','gradient','float3d','minimal','shadow'].includes(data.settings.cardStyle) ? data.settings.cardStyle : 'default',
           showModeSwitch: data.settings.showModeSwitch !== false,
           showRecent: data.settings.showRecent !== false,
           showPinned: data.settings.showPinned !== false,
