@@ -577,6 +577,26 @@ button, input, select, textarea { font: inherit; color: inherit; }
   letter-spacing: 0.01em;
 }
 .search-box input::placeholder { color: var(--dim); }
+.search-engine {
+  flex: none;
+  max-width: 96px;
+  height: 30px;
+  padding: 0 22px 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control);
+  color: var(--muted);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 12px) 13px, calc(100% - 8px) 13px;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+}
+.search-engine:hover { color: var(--text); border-color: var(--line-strong); }
+.search-engine:focus { outline: none; border-color: color-mix(in srgb, var(--aurora) 50%, transparent); }
 .search-kbd {
   flex: none;
   font-family: var(--mono);
@@ -1243,13 +1263,29 @@ td.url-cell { font-family: var(--mono); font-size: 11.5px; color: var(--dim); ma
 }
 .cat-row {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1.6fr) 34px 170px auto;
+  grid-template-columns: 34px minmax(0, 1.6fr) 34px 170px 30px 30px auto;
   gap: 10px;
   align-items: center;
   padding: 8px 0;
   border-bottom: 1px solid var(--line);
 }
 .cat-row:last-child { border-bottom: 0; }
+.cat-move {
+  width: 30px;
+  padding: 0;
+  line-height: 1;
+  font-size: 14px;
+}
+.cat-move:disabled { opacity: 0.3; cursor: not-allowed; }
+.engine-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.engine-row:last-child { border-bottom: 0; }
 .cat-row .cat-icon-preview {
   width: 30px;
   height: 30px;
@@ -1433,8 +1469,9 @@ select.input-sm { appearance: none; background-image: none; }
   .top-actions { width: 100%; justify-content: space-between; }
   .mode-switch button { padding: 6px 10px; }
   .form-grid { grid-template-columns: 1fr; }
-  .cat-row { grid-template-columns: 30px minmax(0, 1fr) 96px auto; }
+  .cat-row { grid-template-columns: 30px minmax(0, 1fr) 30px 30px auto; }
   .cat-row .cat-icon-select { display: none; }
+  .cat-row .cat-color { display: none; }
   .cards > * { flex: 1 1 190px; }
   .card { padding: 11px; }
   .card-icon { width: 34px; height: 34px; }

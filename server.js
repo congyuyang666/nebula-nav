@@ -432,9 +432,41 @@ function publicSettings() {
     showQuote: db.settings.showQuote !== false,
     showMonitor: db.settings.showMonitor !== false,
     greeting: clip(db.settings.greeting, 40),
+    deviceName: clip(db.settings.deviceName, 40),
+    defaultEngine: clip(db.settings.defaultEngine, 20) || 'local',
+    searchEngines: sanitizeEngines(db.settings.searchEngines),
     theme: THEMES.includes(db.settings.theme) ? db.settings.theme : 'nebula',
     version: VERSION
   };
+}
+
+/* 自定义搜索引擎：只保留 name + 含 %s 的 http(s) 地址 */
+function sanitizeEngines(list) {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  for (const entry of list) {
+    if (!entry || typeof entry !== 'object') continue;
+    const name = clip(entry.name, 20);
+    const url = clip(entry.url, 300);
+    if (!name || !url) continue;
+    if (!/^https?:\/\//i.test(url) || !url.includes('%s')) continue;
+    out.push({ name, url });
+    if (out.length >= 12) break;
+  }
+  return out;
+}
+
+/* 设备名：优先用后台自定义，其次读宿主机 hostname（容器里 os.hostname 是容器 ID） */
+function deviceLabel() {
+  const custom = clip(db.settings.deviceName, 40);
+  if (custom) return custom;
+  for (const file of ['/host/hostname', '/etc/hostname']) {
+    try {
+      const name = String(fs.readFileSync(file, 'utf8')).trim();
+      if (name && !/^[0-9a-f]{12}$/i.test(name)) return clip(name, 40);
+    } catch { /* 文件不存在就跳过 */ }
+  }
+  return os.hostname();
 }
 
 function adminSettings() {
@@ -863,7 +895,7 @@ async function handle(req, res) {
     const memory = { total: totalMem, used: totalMem - freeMem, free: freeMem, usage: +((totalMem - freeMem) / totalMem * 100).toFixed(1) };
     const disks = await disksInfo(db.settings.diskPaths || '/');
     return sendJson(res, 200, {
-      hostname: os.hostname(),
+      hostname: deviceLabel(),
       uptime: os.uptime(),
       cpuCores: os.cpus().length,
       cpuUsage: cpu != null ? +cpu.toFixed(1) : null,
@@ -993,6 +1025,9 @@ async function handle(req, res) {
     db.settings.showMonitor = s.showMonitor !== false;
     db.settings.greeting = clip(s.greeting, 40);
     db.settings.diskPaths = clip(s.diskPaths, 200) || '/';
+    db.settings.deviceName = clip(s.deviceName, 40);
+    db.settings.defaultEngine = clip(s.defaultEngine, 20) || 'local';
+    db.settings.searchEngines = sanitizeEngines(s.searchEngines);
     db.settings.theme = THEMES.includes(s.theme) ? s.theme : 'nebula';
     db.updatedAt = new Date().toISOString();
     await saveDb();

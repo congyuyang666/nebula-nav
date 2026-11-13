@@ -19,6 +19,7 @@
     collapseAll: document.getElementById('collapseAll'),
     lockBtn: document.getElementById('lockBtn'),
     searchInput: document.getElementById('searchInput'),
+    engineSelect: document.getElementById('engineSelect'),
     searchMeta: document.getElementById('searchMeta'),
     clearSearch: document.getElementById('clearSearch'),
     filterBar: document.getElementById('filterBar'),
@@ -664,6 +665,56 @@
     renderContent();
   });
 
+  /* ------------------------------------------------------- 搜索引擎 */
+
+  const BUILTIN_ENGINES = [
+    { id: 'local', name: '站内' },
+    { id: 'bing', name: 'Bing', url: 'https://www.bing.com/search?q=%s' },
+    { id: 'google', name: 'Google', url: 'https://www.google.com/search?q=%s' }
+  ];
+  let engineMap = {};
+
+  function renderEngines(settings) {
+    const sel = els.engineSelect;
+    if (!sel) return;
+    const custom = Array.isArray(settings.searchEngines) ? settings.searchEngines : [];
+    engineMap = {};
+    sel.textContent = '';
+    BUILTIN_ENGINES.forEach((engine) => {
+      engineMap[engine.id] = engine;
+      const opt = document.createElement('option');
+      opt.value = engine.id;
+      opt.textContent = engine.name;
+      sel.appendChild(opt);
+    });
+    custom.forEach((engine, index) => {
+      const id = `c${index}`;
+      engineMap[id] = { id, name: engine.name, url: engine.url };
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = engine.name;
+      sel.appendChild(opt);
+    });
+    const want = settings.defaultEngine || 'local';
+    sel.value = engineMap[want] ? want : 'local';
+    syncSearchHint();
+  }
+
+  function currentEngine() {
+    const id = els.engineSelect ? els.engineSelect.value : 'local';
+    return engineMap[id] || engineMap.local;
+  }
+
+  function syncSearchHint() {
+    const engine = currentEngine();
+    if (!els.searchInput) return;
+    els.searchInput.placeholder = engine && engine.id !== 'local'
+      ? `用 ${engine.name} 搜索，回车在新标签页打开`
+      : '搜索站点、描述或域名';
+  }
+
+  if (els.engineSelect) els.engineSelect.addEventListener('change', syncSearchHint);
+
   let searchTimer = 0;
   els.searchInput.addEventListener('input', () => {
     clearTimeout(searchTimer);
@@ -680,13 +731,19 @@
     els.searchInput.focus();
   });
 
-  // 搜索框回车直接打开第一个匹配结果
+  // 回车：站内模式打开第一个匹配；选了 Bing / Google / 自定义则直接搜索
   els.searchInput.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter') return;
-    const first = els.content.querySelector('.card[href]');
-    if (!first) return;
     event.preventDefault();
-    window.open(first.href, '_blank', 'noopener');
+    const keyword = els.searchInput.value.trim();
+    const engine = currentEngine();
+    if (engine && engine.id !== 'local') {
+      if (!keyword) return;
+      window.open(engine.url.replace('%s', encodeURIComponent(keyword)), '_blank', 'noopener');
+      return;
+    }
+    const first = els.content.querySelector('.card[href]');
+    if (first) window.open(first.href, '_blank', 'noopener');
   });
 
   document.addEventListener('keydown', (event) => {
@@ -735,6 +792,7 @@
     els.modeSwitch.hidden = config.settings.showModeSwitch === false;
     renderWelcome(config.settings);
     startClock(config.settings);
+    renderEngines(config.settings);
     startMonitor(config.settings);
     applyDensity();
     syncModeButtons();

@@ -215,6 +215,9 @@
     $('setShowMonitor').checked = state.settings.showMonitor !== false;
     $('setGreeting').value = state.settings.greeting || '';
     $('setDiskPaths').value = state.settings.diskPaths || '/';
+    $('setDeviceName').value = state.settings.deviceName || '';
+    $('setDefaultEngine').value = state.settings.defaultEngine || 'local';
+    initEngines();
     applyTheme(state.settings.theme);
   }
 
@@ -233,14 +236,91 @@
       showMonitor: $('setShowMonitor').checked,
       greeting: $('setGreeting').value.trim(),
       diskPaths: $('setDiskPaths').value.trim(),
+      deviceName: $('setDeviceName').value.trim(),
+      defaultEngine: $('setDefaultEngine').value,
+      searchEngines: collectEngines(),
     };
     state.settings = next;
   }
 
   ['setTitle', 'setSubtitle', 'setFooter', 'setMode', 'setShowMode',
     'setShowRecent', 'setShowPinned', 'setShowClock', 'setShowQuote',
-    'setShowMonitor', 'setGreeting', 'setDiskPaths'].forEach((id) => {
+    'setShowMonitor', 'setGreeting', 'setDiskPaths', 'setDeviceName',
+    'setDefaultEngine'].forEach((id) => {
     $(id).addEventListener('input', () => { readSettings(); markDirty(); });
+  });
+
+  /* ------------------------------------------------------ 自定义搜索引擎 */
+
+  let engineDraft = [];
+
+  function initEngines() {
+    engineDraft = Array.isArray(state.settings.searchEngines)
+      ? state.settings.searchEngines.map((e) => ({ name: e.name || '', url: e.url || '' }))
+      : [];
+    renderEngineRows();
+  }
+
+  function renderEngineRows() {
+    const list = $('engineList');
+    list.textContent = '';
+    if (!engineDraft.length) {
+      list.appendChild(el('p', 'form-hint', '还没有自定义引擎，点下面「添加引擎」。'));
+      return;
+    }
+    engineDraft.forEach((engine, index) => {
+      const row = el('div', 'engine-row');
+
+      const name = el('input', 'input-sm');
+      name.value = engine.name;
+      name.placeholder = '名称，如 DuckDuckGo';
+      name.maxLength = 20;
+      name.addEventListener('input', () => {
+        engineDraft[index].name = name.value;
+        readSettings();
+        markDirty();
+      });
+
+      const url = el('input', 'input-sm');
+      url.value = engine.url;
+      url.placeholder = 'https://duckduckgo.com/?q=%s';
+      url.addEventListener('input', () => {
+        engineDraft[index].url = url.value;
+        readSettings();
+        markDirty();
+      });
+
+      const del = el('button', 'btn btn-danger btn-sm', '删除');
+      del.type = 'button';
+      del.addEventListener('click', () => {
+        engineDraft.splice(index, 1);
+        renderEngineRows();
+        readSettings();
+        markDirty();
+      });
+
+      row.appendChild(name);
+      row.appendChild(url);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+
+  function collectEngines() {
+    return engineDraft
+      .map((e) => ({ name: String(e.name || '').trim(), url: String(e.url || '').trim() }))
+      .filter((e) => e.name && /^https?:\/\//i.test(e.url) && e.url.includes('%s'));
+  }
+
+  $('addEngine').addEventListener('click', () => {
+    if (engineDraft.length >= 12) {
+      toast('最多 12 个自定义引擎', true);
+      return;
+    }
+    engineDraft.push({ name: '', url: '' });
+    renderEngineRows();
+    readSettings();
+    markDirty();
   });
 
   // 换主题立即预览，点「保存修改」后写回服务器
@@ -302,6 +382,30 @@
         markDirty();
       });
 
+      const up = el('button', 'btn btn-ghost btn-sm cat-move', '↑');
+      up.type = 'button';
+      up.title = '上移';
+      up.disabled = index === 0;
+      up.addEventListener('click', () => {
+        if (index === 0) return;
+        const [moved] = state.categories.splice(index, 1);
+        state.categories.splice(index - 1, 0, moved);
+        renderCategories();
+        markDirty();
+      });
+
+      const down = el('button', 'btn btn-ghost btn-sm cat-move', '↓');
+      down.type = 'button';
+      down.title = '下移';
+      down.disabled = index === state.categories.length - 1;
+      down.addEventListener('click', () => {
+        if (index >= state.categories.length - 1) return;
+        const [moved] = state.categories.splice(index, 1);
+        state.categories.splice(index + 1, 0, moved);
+        renderCategories();
+        markDirty();
+      });
+
       const del = el('button', 'btn btn-danger btn-sm', '删除');
       del.type = 'button';
       del.addEventListener('click', () => {
@@ -325,6 +429,8 @@
       row.appendChild(name);
       row.appendChild(color);
       row.appendChild(iconSelect);
+      row.appendChild(up);
+      row.appendChild(down);
       row.appendChild(del);
       list.appendChild(row);
     });
