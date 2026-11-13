@@ -131,6 +131,25 @@
     document.documentElement.dataset.theme = theme || 'nebula';
   }
 
+  function applyCardStyle(style) {
+    const allowed = ['default', 'emboss', 'inset', 'glass', 'neon', 'gradient', 'float3d', 'minimal', 'shadow'];
+    const active = allowed.includes(style) ? style : 'default';
+    for (const s of allowed) document.body.classList.remove('card-style-' + s);
+    if (active !== 'default') document.body.classList.add('card-style-' + active);
+  }
+
+  function applyFont(font, customFont) {
+    const allowed = ['default', 'system', 'jetbrains', 'inter', 'roboto', 'noto', 'sourcehan', 'pingfang', 'custom'];
+    const active = allowed.includes(font) ? font : 'default';
+    for (const f of allowed) document.body.classList.remove('font-' + f);
+    if (active !== 'default') document.body.classList.add('font-' + active);
+    if (active === 'custom' && customFont) {
+      document.documentElement.style.setProperty('--custom-font', customFont);
+    } else {
+      document.documentElement.style.removeProperty('--custom-font');
+    }
+  }
+
   /* -------------------------------------------------------------- 启动 */
 
   async function init() {
@@ -228,6 +247,8 @@
     initEngines();
     initGithub();
     applyTheme(state.settings.theme);
+    applyCardStyle(state.settings.cardStyle);
+    applyFont(state.settings.font, state.settings.customFont);
   }
 
   function readSettings() {
