@@ -19,6 +19,7 @@ const { spawn } = require('node:child_process');
 const ROOT = __dirname;
 const VERSION = require('./package.json').version;
 const THEMES = ['nebula', 'ocean', 'forest', 'dusk', 'sunset', 'graphite', 'dawn', 'paper'];
+const CARD_STYLES = ['default', 'emboss', 'inset', 'glass', 'neon', 'gradient', 'float3d', 'minimal', 'shadow'];
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
@@ -437,6 +438,9 @@ function publicSettings() {
     defaultEngine: clip(db.settings.defaultEngine, 20) || 'local',
     searchEngines: sanitizeEngines(db.settings.searchEngines),
     theme: THEMES.includes(db.settings.theme) ? db.settings.theme : 'nebula',
+    cardStyle: CARD_STYLES.includes(db.settings.cardStyle) ? db.settings.cardStyle : 'default',
+    ghRepo: clip(db.settings.ghRepo, 200),
+    icp: clip(db.settings.icp, 80),
     version: VERSION
   };
 }
@@ -1268,6 +1272,9 @@ async function handle(req, res) {
     db.settings.defaultEngine = clip(s.defaultEngine, 20) || 'local';
     db.settings.searchEngines = sanitizeEngines(s.searchEngines);
     db.settings.theme = THEMES.includes(s.theme) ? s.theme : 'nebula';
+    db.settings.cardStyle = CARD_STYLES.includes(s.cardStyle) ? s.cardStyle : 'default';
+    db.settings.ghRepo = clip(s.ghRepo, 200);
+    db.settings.icp = clip(s.icp, 80);
     db.updatedAt = new Date().toISOString();
     await saveDb();
     return sendJson(res, 200, {
