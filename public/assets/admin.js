@@ -210,10 +210,15 @@
     $('setMode').value = state.settings.defaultMode || 'lan';
     $('setTheme').value = state.settings.theme || 'nebula';
     $('setCardStyle').value = state.settings.cardStyle || 'default';
+    $('setFont').value = state.settings.font || 'default';
+    $('setCustomFont').value = state.settings.customFont || '';
     $('setShowMode').checked = state.settings.showModeSwitch !== false;
     $('setShowRecent').checked = state.settings.showRecent !== false;
     $('setShowPinned').checked = state.settings.showPinned !== false;
     $('setShowClock').checked = state.settings.showClock !== false;
+    $('setShowVisitorIp').checked = state.settings.showVisitorIp !== false;
+    $('setShowVisitorFlag').checked = state.settings.showVisitorFlag !== false;
+    $('setShowDeployInfo').checked = state.settings.showDeployInfo !== false;
     $('setShowQuote').checked = state.settings.showQuote !== false;
     $('setShowMonitor').checked = state.settings.showMonitor !== false;
     $('setGreeting').value = state.settings.greeting || '';
@@ -223,6 +228,7 @@
     initEngines();
     initGithub();
     applyTheme(state.settings.theme);
+    applyAdminFont();
   }
 
   function readSettings() {
@@ -235,10 +241,15 @@
       defaultMode: $('setMode').value,
       theme: $('setTheme').value,
       cardStyle: $('setCardStyle').value,
+      font: $('setFont').value,
+      customFont: $('setCustomFont').value.trim(),
       showModeSwitch: $('setShowMode').checked,
       showRecent: $('setShowRecent').checked,
       showPinned: $('setShowPinned').checked,
       showClock: $('setShowClock').checked,
+      showVisitorIp: $('setShowVisitorIp').checked,
+      showVisitorFlag: $('setShowVisitorFlag').checked,
+      showDeployInfo: $('setShowDeployInfo').checked,
       showQuote: $('setShowQuote').checked,
       showMonitor: $('setShowMonitor').checked,
       greeting: $('setGreeting').value.trim(),
@@ -252,6 +263,7 @@
 
   ['setTitle', 'setSubtitle', 'setFooter', 'setMode', 'setShowMode',
     'setShowRecent', 'setShowPinned', 'setShowClock', 'setShowQuote',
+    'setShowVisitorIp', 'setShowVisitorFlag', 'setShowDeployInfo',
     'setShowMonitor', 'setGreeting', 'setDiskPaths', 'setDeviceName',
     'setDefaultEngine'].forEach((id) => {
     $(id).addEventListener('input', () => { readSettings(); markDirty(); });
@@ -454,6 +466,17 @@
   $('setCardStyle').addEventListener('input', () => {
     readSettings();
     applyCardStyle(state.settings.cardStyle);
+    markDirty();
+  });
+  // 换字体立即预览
+  $('setFont').addEventListener('input', () => {
+    readSettings();
+    applyFont(state.settings.font, state.settings.customFont);
+    markDirty();
+  });
+  $('setCustomFont').addEventListener('input', () => {
+    readSettings();
+    applyFont(state.settings.font, state.settings.customFont);
     markDirty();
   });
 
@@ -1117,6 +1140,8 @@
           defaultMode: ['auto', 'lan', 'wan'].includes(data.settings.defaultMode) ? data.settings.defaultMode : 'lan',
           theme: themes.includes(data.settings.theme) ? data.settings.theme : 'nebula',
           cardStyle: ['default','emboss','inset','glass','neon','gradient','float3d','minimal','shadow'].includes(data.settings.cardStyle) ? data.settings.cardStyle : 'default',
+          font: ['default','system','jetbrains','inter','roboto','noto','sourcehan','pingfang','custom'].includes(data.settings.font) ? data.settings.font : 'default',
+          customFont: String(data.settings.customFont || '').slice(0, 200),
           showModeSwitch: data.settings.showModeSwitch !== false,
           showRecent: data.settings.showRecent !== false,
           showPinned: data.settings.showPinned !== false,
