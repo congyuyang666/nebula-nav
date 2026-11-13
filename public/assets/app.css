@@ -57,6 +57,53 @@
   --mask-bg: rgba(3, 6, 11, 0.72);
 }
 
+/* ------------------------------------------------------------ 字体预设 */
+body[data-font="rounded"] {
+  --font: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Noto Sans SC",
+    system-ui, -apple-system, sans-serif;
+}
+body[data-font="hei"] {
+  --font: "Microsoft YaHei", "PingFang SC", "Source Han Sans SC", "Noto Sans SC",
+    sans-serif;
+}
+body[data-font="song"] {
+  --font: "Songti SC", "Source Han Serif SC", "Noto Serif SC", SimSun, serif;
+}
+body[data-font="kai"] {
+  --font: "Kaiti SC", "STKaiti", KaiTi, "Noto Serif SC", serif;
+}
+body[data-font="mono"] {
+  --font: var(--mono);
+}
+
+/* ------------------------------------------------------------ 访客 IP */
+.visitor-ip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--control);
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: default;
+  user-select: none;
+}
+.visitor-ip-text {
+  font-family: var(--mono);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.visitor-flag {
+  width: 18px;
+  height: 13px;
+  object-fit: cover;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+
 /* ------------------------------------------------------------ 主题预设 */
 html[data-theme="ocean"] {
   --bg: #050d18;
@@ -860,6 +907,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 /* ---------------------------------------------------------- 卡片效果（9 种） */
+
+/* ---------------------------------------------------------- 字体（8 种 + 自定义） */
+body.font-system { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif; }
+body.font-jetbrains { font-family: "JetBrains Mono", "Fira Code", "PingFang SC", "Microsoft YaHei", monospace; }
+body.font-inter { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+body.font-roboto { font-family: "Roboto", "PingFang SC", "Microsoft YaHei", sans-serif; }
+body.font-noto { font-family: "Noto Sans SC", "Noto Sans", -apple-system, "Microsoft YaHei", sans-serif; }
+body.font-sourcehan { font-family: "Source Han Sans SC", "Source Han Sans CN", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; }
+body.font-pingfang { font-family: "PingFang SC", "PingFang TC", "Microsoft YaHei", sans-serif; }
+body.font-custom { font-family: var(--custom-font, inherit); }
 
 /* 1. default — 默认（不追加覆盖，沿用 .card 基础样式） */
 
