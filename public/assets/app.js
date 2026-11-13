@@ -42,7 +42,6 @@
     monitorMemBar: document.getElementById('monitorMemBar'),
     monitorMemVal: document.getElementById('monitorMemVal'),
     monitorFoot: document.getElementById('monitorFoot'),
-    monitorIp: document.getElementById('monitorIp'),
     syncBadge: document.getElementById('syncBadge')
   };
 
@@ -271,53 +270,6 @@
     } catch { /* 网络错误就默默跳过，等下次 */ }
     // 每一轮监控刷新也顺带更新同步状态（省一个定时器）
     fetchGhStatus();
-  }
-
-  async function fetchMeOnce() {
-    try {
-      const me = await api('/api/me');
-      if (!me?.ip) return;
-      if (els.monitorIp) {
-        const cc = me.geo?.cc;
-        const flag = flagImg(cc);
-        const isV6 = !!me.ipv6;
-        const mainIp = isV6 ? (compactV6(me.ipv6) || me.ipv6) : (me.ipv4 || me.ip);
-        const mainClass = 'ip-main' + (isV6 ? ' ip-v6' : '');
-        const title = '来访 IP: ' + me.ip + (me.geo?.country ? ' (' + me.geo.country + ')' : (cc === 'ZZ' ? ' (Local)' : ''));
-        els.monitorIp.innerHTML =
-          '<span class="ip-flag' + (cc === 'ZZ' ? ' ip-local' : '') + '" title="' + title + '">' + flag + '</span>' +
-          '<span class="' + mainClass + '" title="' + title + '">' + mainIp + '</span>';
-      }
-    } catch { /* 未登录或网络错误就不显示 */ }
-  }
-
-  function flagImg(cc) {
-    if (!cc) return '';
-    if (cc === 'ZZ') return '🖥️';
-    if (cc === 'XX') return '🌐';
-    const lower = cc.toLowerCase();
-    // flagcdn: Cloudflare CDN，免费、稳定、40px 足够清晰
-    return '<img class="ip-flag-img" src="https://flagcdn.com/w40/' + lower + '.png" alt="' + cc + '" onerror="this.replaceWith(document.createTextNode(\'' + flagEmoji(cc) + '\'))" referrerpolicy="no-referrer" loading="lazy">';
-  }
-  function flagEmoji(cc) {
-    if (!cc) return '🖥️';
-    if (cc === 'ZZ') return '🖥️';
-    if (cc === 'XX') return '🌐';
-    return String.fromCodePoint(...cc.toUpperCase().split('').map(function (c) { return 127397 + c.charCodeAt(0); }));
-  }
-
-  function compactV6(ip) {
-    if (!ip || !/:/.test(ip)) return ip || '';
-    // 去掉每段前导零，保留至少一个
-    let s = ip.split(':').map(function (p) { return p.replace(/^0+/, '') || '0'; }).join(':');
-    // 最长连续的 :0:0:... 换成 ::
-    const m = s.match(/:(?:0:)+0/g);
-    if (m) {
-      let longest = m[0]; m.forEach(function (x) { if (x.length > longest.length) longest = x; });
-      s = s.replace(longest, '::');
-    }
-    if (s.length > 30) s = s.slice(0, 27) + '…';
-    return s;
   }
 
   async function fetchGhStatus() {
@@ -878,7 +830,6 @@
     startClock(config.settings);
     renderEngines(config.settings);
     startMonitor(config.settings);
-    fetchMeOnce();
     fetchGhStatus();
     applyDensity();
     syncModeButtons();
