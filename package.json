@@ -1,6 +1,6 @@
 {
   "name": "nebula-nav",
-  "version": "1.3.4",
+  "version": "1.4.0",
   "private": true,
   "description": "自托管的星云导航页：密码门禁、后台管理、内外网切换、密码保险箱",
   "main": "server.js",
