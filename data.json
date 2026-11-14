@@ -4,7 +4,7 @@
       "id": "media",
       "name": "影音",
       "color": "#7bd4ff",
-      "icon": "film"
+      "icon": "drive"
     },
     {
       "id": "nas",
@@ -38,8 +38,14 @@
     },
     {
       "id": "misc",
-      "name": "其他",
+      "name": "智能家居",
       "color": "#8fa0b8",
+      "icon": "grid"
+    },
+    {
+      "id": "cat-mwe973sc-0so9",
+      "name": "PT站点",
+      "color": "#4be1c0",
       "icon": "grid"
     }
   ],
@@ -50,7 +56,7 @@
       "desc": "NAS 管理后台",
       "urlLan": "https://192.168.31.177:5001",
       "urlWan": "https://d.speedtest.462878248.xyz:16666/",
-      "category": "media",
+      "category": "nas",
       "tags": [
         "nas",
         "synology"
@@ -100,25 +106,12 @@
       "pinned": false
     },
     {
-      "id": "openlist",
-      "title": "OpenList",
-      "desc": "网盘聚合与挂载",
-      "urlLan": "http://192.168.1.10:5244",
-      "urlWan": "",
-      "category": "media",
-      "tags": [
-        "storage"
-      ],
-      "icon": "",
-      "pinned": false
-    },
-    {
       "id": "homeassistant",
       "title": "Home Assistant",
       "desc": "智能家居控制台",
       "urlLan": "http://192.168.31.229:8123/",
       "urlWan": "https://ha.speedtest.462878248.xyz:16666",
-      "category": "nas",
+      "category": "misc",
       "tags": [
         "iot",
         "home"
@@ -130,26 +123,26 @@
       "id": "dockge",
       "title": "Dockge",
       "desc": "Compose 容器管理",
-      "urlLan": "http://192.168.1.10:5001",
-      "urlWan": "",
+      "urlLan": "http://192.168.31.177:35001",
+      "urlWan": "https://dockge.speedtest.462878248.xyz:16666",
       "category": "nas",
       "tags": [
         "docker"
       ],
-      "icon": "",
+      "icon": "/icons/8c4aada9aac19fd1.jpg",
       "pinned": false
     },
     {
       "id": "safeline",
       "title": "雷池 WAF",
       "desc": "Web 应用防火墙",
-      "urlLan": "https://192.168.1.10:9443",
-      "urlWan": "",
+      "urlLan": "http://192.168.31.177:29443",
+      "urlWan": "https://safeline.speedtest.462878248.xyz:16666",
       "category": "nas",
       "tags": [
         "security"
       ],
-      "icon": "",
+      "icon": "/icons/2852739131dbb7ae.webp",
       "pinned": false
     },
     {
@@ -169,13 +162,13 @@
       "id": "adguard",
       "title": "AdGuard Home",
       "desc": "DNS 与去广告",
-      "urlLan": "http://192.168.1.1:3000",
-      "urlWan": "",
+      "urlLan": "http://192.168.31.24:3006",
+      "urlWan": "https://ad.speedtest.462878248.xyz:16666",
       "category": "nas",
       "tags": [
         "dns"
       ],
-      "icon": "",
+      "icon": "/icons/fc7600b6acd71582.png",
       "pinned": false
     },
     {
@@ -183,12 +176,12 @@
       "title": "Vaultwarden",
       "desc": "自建密码库",
       "urlLan": "http://192.168.1.10:8222",
-      "urlWan": "",
+      "urlWan": "https://vau.speedtest.462878248.xyz:16666",
       "category": "nas",
       "tags": [
         "password"
       ],
-      "icon": "",
+      "icon": "/icons/c40321a43ab03314.webp",
       "pinned": false
     },
     {
@@ -362,7 +355,447 @@
       ],
       "icon": "",
       "pinned": false
+    },
+    {
+      "id": "site-mwe99ce3-drc5",
+      "title": "米家中枢",
+      "desc": "智能中枢网关",
+      "urlLan": "http://192.168.31.77",
+      "urlWan": "https://zs.speedtest.462878248.xyz:16666",
+      "category": "misc",
+      "tags": [],
+      "icon": "/icons/98d6f64fcc63c4ae.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9bdcc-8lwp",
+      "title": "小米AX6000",
+      "desc": "小米主路由",
+      "urlLan": "http://192.168.31.1:8080",
+      "urlWan": "https://xiaomi.speedtest.462878248.xyz:16666",
+      "category": "nas",
+      "tags": [],
+      "icon": "/icons/7aebf73b45baaa43.jpg",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9fcpk-0vi4",
+      "title": "Open-Box",
+      "desc": "",
+      "urlLan": "http://192.168.31.24:3036",
+      "urlWan": "https://box.speedtest.462878248.xyz:16666",
+      "category": "nas",
+      "tags": [],
+      "icon": "/icons/6dbedc220ef64ccf.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9h3hx-xmk2",
+      "title": "馒头",
+      "desc": "",
+      "urlLan": "https://kp.m-team.cc/index",
+      "urlWan": "https://kp.m-team.cc/index",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/040fac5d87a2aa43.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9j1dk-004k",
+      "title": "听听歌",
+      "desc": "",
+      "urlLan": "https://totheglory.im/",
+      "urlWan": "https://totheglory.im/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/eec3a495bb5a18a1.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9k8ie-5n5l",
+      "title": "大青虫",
+      "desc": "",
+      "urlLan": "https://cyanbug.net/",
+      "urlWan": "https://cyanbug.net/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/68dd08279bb33595.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9l6ip-9394",
+      "title": "Ourbits",
+      "desc": "",
+      "urlLan": "https://ourbits.club/",
+      "urlWan": "https://ourbits.club/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/4ace25f26339c720.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9lw0i-1hx9",
+      "title": "杜比",
+      "desc": "",
+      "urlLan": "https://www.uhddolby.com/index.php",
+      "urlWan": "https://www.uhddolby.com/index.php",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/bd768efe78ef288c.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9mje2-zkti",
+      "title": "家园",
+      "desc": "",
+      "urlLan": "https://hdhome.org/",
+      "urlWan": "https://hdhome.org/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/28aeac7ab73ff1d9.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9n6dp-i0lh",
+      "title": "织梦",
+      "desc": "",
+      "urlLan": "https://zmpt.cc/",
+      "urlWan": "https://zmpt.cc/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/dd76718e318911cc.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9ojc8-rlya",
+      "title": "UB",
+      "desc": "",
+      "urlLan": "https://ubits.club/",
+      "urlWan": "https://ubits.club/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/0674e2979186ce24.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9p39s-eihs",
+      "title": "咖啡",
+      "desc": "",
+      "urlLan": "https://ptcafe.club",
+      "urlWan": "https://ptcafe.club",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/e17fb3c5fc3d0261.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9qi36-53xj",
+      "title": "PTtime",
+      "desc": "",
+      "urlLan": "https://www.pttime.org/",
+      "urlWan": "https://www.pttime.org/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/2a6749251530db08.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9r3e6-7ee5",
+      "title": "财神",
+      "desc": "",
+      "urlLan": "https://cspt.top",
+      "urlWan": "https://cspt.top",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/bbadd2b54f15facb.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9rwje-jeoi",
+      "title": "蟹黄堡",
+      "desc": "",
+      "urlLan": "https://cspt.top",
+      "urlWan": "https://cspt.top",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/c12d2c280e741a15.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9si0b-64o0",
+      "title": "麒麟",
+      "desc": "",
+      "urlLan": "https://www.hdkyl.in",
+      "urlWan": "https://www.hdkyl.in",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/c0f1795e5209619c.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9tdtt-cjce",
+      "title": "末日",
+      "desc": "",
+      "urlLan": "https://www.agsvpt.com/",
+      "urlWan": "https://www.agsvpt.com/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/bca2e0086e238220.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9tvjs-k1yi",
+      "title": "Hdtime",
+      "desc": "",
+      "urlLan": "https://hdtime.org/",
+      "urlWan": "https://hdtime.org/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/3de3d5a92e57a604.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9v4xz-udy3",
+      "title": "Carpt",
+      "desc": "",
+      "urlLan": "https://carpt.net/login.php",
+      "urlWan": "https://carpt.net/login.php",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/d7755be435a53565.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9vrez-zel1",
+      "title": "躺平",
+      "desc": "",
+      "urlLan": "https://www.tangpt.top/",
+      "urlWan": "https://www.tangpt.top/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/904cf27ea918f316.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9xa5s-zgaf",
+      "title": "朱雀",
+      "desc": "",
+      "urlLan": "https://zhuque.in/",
+      "urlWan": "https://zhuque.in/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/17dfa9eb5c79b595.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9yhnp-20ns",
+      "title": "红豆饭",
+      "desc": "",
+      "urlLan": "https://hdfans.org/login.php",
+      "urlWan": "https://hdfans.org/login.php",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/252c4cbac3794fda.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9z963-otv8",
+      "title": "雨",
+      "desc": "",
+      "urlLan": "https://raingfh.top/login.php",
+      "urlWan": "https://raingfh.top/login.php",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/72a28f5dfe4ef570.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwe9zsri-ibmh",
+      "title": "下水道",
+      "desc": "",
+      "urlLan": "https://sewerpt.com/",
+      "urlWan": "https://sewerpt.com/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/8269970d2c894ef1.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwea0f5b-ghpl",
+      "title": "Hdvideo",
+      "desc": "",
+      "urlLan": "https://hdvideo.top/",
+      "urlWan": "https://hdvideo.top/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/790bae5fa98bbbbc.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwea106t-gs5i",
+      "title": "观众",
+      "desc": "",
+      "urlLan": "https://audiences.me/",
+      "urlWan": "https://audiences.me/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/314940ace9395557.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwea1q4n-rt7t",
+      "title": "皇后",
+      "desc": "",
+      "urlLan": "https://open.cd/",
+      "urlWan": "https://open.cd/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/e91c22e7dbf61b53.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mweb88pk-hzzp",
+      "title": "Lucky",
+      "desc": "公网管理工具",
+      "urlLan": "http://192.168.31.24:16601",
+      "urlWan": "https://l.speedtest.462878248.xyz:16666",
+      "category": "nas",
+      "tags": [],
+      "icon": "/icons/a7ebf4952b3536f4.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwebaxq3-4dei",
+      "title": "MDC-NG",
+      "desc": "刮削器",
+      "urlLan": "http://192.168.31.177:9208",
+      "urlWan": "https://mdc.speedtest.462878248.xyz:16666",
+      "category": "media",
+      "tags": [],
+      "icon": "/icons/2637475bd288c412.webp",
+      "pinned": false
+    },
+    {
+      "id": "site-mwebcga0-8bia",
+      "title": "cool control",
+      "desc": "服务器温度控制",
+      "urlLan": "http://192.168.31.177:11987",
+      "urlWan": "https://cool.speedtest.462878248.xyz:16666",
+      "category": "dev",
+      "tags": [],
+      "icon": "/icons/c3fc55d3471ac00a.jpg",
+      "pinned": false
+    },
+    {
+      "id": "site-mwebdk3w-lzkw",
+      "title": "宝塔",
+      "desc": "",
+      "urlLan": "http://192.168.31.177:5600",
+      "urlWan": "https://b.speedtest.462878248.xyz:16666",
+      "category": "dev",
+      "tags": [],
+      "icon": "/icons/c060cf987a65001f.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwebfd7a-wu52",
+      "title": "蜂巢论坛",
+      "desc": "",
+      "urlLan": "https://pting.club/",
+      "urlWan": "https://pting.club/",
+      "category": "media",
+      "tags": [],
+      "icon": "/icons/96451d3fc869dc8f.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwebgmfq-rhss",
+      "title": "PT监护室",
+      "desc": "",
+      "urlLan": "https://savept.icu/",
+      "urlWan": "https://savept.icu/",
+      "category": "media",
+      "tags": [],
+      "icon": "/icons/67deaae86dbcdcec.ico",
+      "pinned": false
+    },
+    {
+      "id": "site-mwebp4yf-qkvv",
+      "title": "良心云",
+      "desc": "机场登录入口",
+      "urlLan": "https://xn--9kqz23b19z.com/#/register?code=nUKci4tX",
+      "urlWan": "https://xn--9kqz23b19z.com/#/register?code=nUKci4tX",
+      "category": "dev",
+      "tags": [],
+      "icon": "/icons/9536a6fb2e8e9b1e.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwebqahr-2avc",
+      "title": "Ncloud",
+      "desc": "NC机场入口",
+      "urlLan": "https://xn--ncloud-o43k.com/#/register?code=x4OqfjdS",
+      "urlWan": "https://xn--ncloud-o43k.com/#/register?code=x4OqfjdS",
+      "category": "dev",
+      "tags": [],
+      "icon": "/icons/6491cc36f45e2700.webp",
+      "pinned": false
+    },
+    {
+      "id": "site-mwedhgvm-8224",
+      "title": "开注PT站点",
+      "desc": "",
+      "urlLan": "https://bfjy2024.github.io/openpt/",
+      "urlWan": "https://bfjy2024.github.io/openpt/",
+      "category": "cat-mwe973sc-0so9",
+      "tags": [],
+      "icon": "/icons/252c4cbac3794fda.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwee3exp-6bbw",
+      "title": "CookieCloud",
+      "desc": "CookieCloud同步服务器",
+      "urlLan": "http://192.168.31.177:8088",
+      "urlWan": "https://cookie.speedtest.462878248.xyz:16666",
+      "category": "dev",
+      "tags": [],
+      "icon": "/icons/74c3e0c756c761fe.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mweurtm3-1mc9",
+      "title": "Nas-nav",
+      "desc": "",
+      "urlLan": "https://nas-nav-4vb.pages.dev",
+      "urlWan": "https://nas-nav-4vb.pages.dev",
+      "category": "nas",
+      "tags": [],
+      "icon": "/icons/e401287a0efc286a.png",
+      "pinned": false
+    },
+    {
+      "id": "site-mwg0k95n-xd2r",
+      "title": "图床",
+      "desc": "",
+      "urlLan": "http://img.ouyang.cc.cd/",
+      "urlWan": "http://img.ouyang.cc.cd/",
+      "category": "dev",
+      "tags": [],
+      "icon": "",
+      "pinned": false
+    },
+    {
+      "id": "site-mwg1la8s-bro1",
+      "title": "Synology Photos",
+      "desc": "",
+      "urlLan": "https://192.168.31.177/photo",
+      "urlWan": "https://xiangce.speedtest.462878248.xyz:16666",
+      "category": "nas",
+      "tags": [],
+      "icon": "/icons/be442da384118d37.png",
+      "pinned": false
     }
   ],
-  "updatedAt": "2026-11-13T03:30:11.794Z"
+  "updatedAt": "2026-11-14T10:26:25.542Z"
 }
